@@ -23,7 +23,7 @@ For a real-time strategy game for example, you can have a layer *ground* for the
 
 You can create your own mod, it is only a set of pictures for the tiles and a [JSON file](https://www.json.org/json-en.html "a lightweight data-interchange format") for configuring the mod.
 
-Teddy is free and open source. A binary is available for Microsoft Windows.
+Teddy is free and open source, licensed under the MIT licence. A binary is available for Microsoft Windows.
 
 ## Credits and history
 
