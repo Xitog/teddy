@@ -12,9 +12,12 @@ Teddy is a hommage to two great tools of the past:
 
 ## Description
 
-Teddy is a program to edit tile grids, in order to make levels or maps for video games. A map consists of one or more **layers** which are a matrix of integer.
+Teddy is a program to edit tile grids, in order to make levels or maps for video games.
 
 Teddy uses the concept of **mod**. A mod is set of **tiles** and **layers** which will be available to create the map.
+- A map consists of one or more **layers**.
+- A layer is just a matrix of integer.
+- A tile is picture with an associated value, for example **1** is used for water, **2** for grass. **0** always means empty. 
 
 For a real-time strategy game for example, you can have a layer *ground* for the ground tiles and a layer *unit* where you will store the units.
 
