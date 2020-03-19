@@ -31,7 +31,7 @@ Teddy is free and open source, licensed under the MIT licence.
 
 A binary is available for Microsoft Windows.
 
-To run the source code, you will need to install a [Python distribution](https://www.python.org/) >= 3.6 and only the third-party [Pillow](https://pypi.org/project/Pillow/) library. Tkinter is already included in the standard Python distribution.
+To run the source code, you will need to install a [Python distribution](https://www.python.org/) (version >= 3.6) and only the third-party [Pillow](https://pypi.org/project/Pillow/) library. Tkinter is already included in the standard Python distribution.
 
 ## Credits and history
 
