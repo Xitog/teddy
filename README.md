@@ -6,7 +6,9 @@
 
 Teddy is programmed using the Python language and the Tkinter library. Many thanks to all the people behind these marvelous tools!
 
-Teddy is a hommage to two great tools of the past: **TEd** (also known as TED5 or TED 5.0), a tool whose origins date back to 1988, made by John Romero and [used for more than 30 games](https://www.gamasutra.com/blogs/DavidLightbown/20170223/289955/Classic_Tools_Retrospective_John_Romero_talks_about_creating_TEd_the_tile_editor_that_shipped_over_30_games.php), or the map editor of the beloved **Warcraft II** (1995) from Blizzard.
+Teddy is a hommage to two great tools of the past:
+- **TEd**, a tool whose origins date back to 1988, made by [John Romero](https://twitter.com/romero) and [used for more than 30 games](https://www.gamasutra.com/blogs/DavidLightbown/20170223/289955/Classic_Tools_Retrospective_John_Romero_talks_about_creating_TEd_the_tile_editor_that_shipped_over_30_games.php). It most famous version is TEd 5.0, dating from 1991 and used for Wolfenstein 3D from id Software.
+- The map editor of the beloved **Warcraft II** (1995) from Blizzard.
 
 ## Description
 
