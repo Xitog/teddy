@@ -19,7 +19,7 @@ Teddy uses the concept of **mod**. A mod is set of **tiles** and **layers** whic
 - A layer can be a **texture layer** or an **object layer** both are a matrix of integer. 
 - In a **texture layer**, an integer at x,y designates a tile.
 - A tile is picture with an associated integer value, for example **1** is used for water, **2** for grass. **0** always means empty.
-- In a **object layer**, an integer at x,y designates a element in a list of **objects** with **properties**.
+- In an **object layer**, an integer at x,y designates a element in a list of **objects** with **properties**.
 
 For a real-time strategy game for example, you can have a texture layer *ground* for the ground tiles and an object layer *unit* where you will store the units. A unit can have a *player* property, refering to the player it belongs.
 
