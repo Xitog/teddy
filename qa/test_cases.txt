@@ -1,0 +1,36 @@
+================================================================================
+imgedit.py
+================================================================================
+
+Scénario 1
+----------
+help            # l'aide s'affiche
+exit            # quitte le programme
+
+Scénario 2
+----------
+create          # create a black 32x32 picture
+save out.png    # black 32x32
+exit            # quitte le programme
+
+Scénario 3
+----------
+create          # create a black 32x32 picture
+list            # show only one color, black
+highlight 1     # does nothing, index out of bound
+highlight 0     # replace black by magenta
+len             # one operation saved
+save out.png    # magenta 32x32
+exit            # quitte le programme
+
+Scénario 4
+----------
+create          # create a black 32x32 picture
+list            # show only one color, black
+highlight 1     # does nothing, index out of bound
+highlight 0     # replace black by magenta
+len             # one operation saved
+reset           # reset all operations
+len             # zero operation saved
+save out.png    # black 32x32
+exit            # quitte le programme
