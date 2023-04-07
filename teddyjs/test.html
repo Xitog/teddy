@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BSP Dungeons</title>
+<style>
+button {
+  font-family: monospace;
+  margin: 0.25em;
+}
+</style>
+<script>
+
+//23h29 : le canvas change de taille à volonté...
+//00h15 : très étrange, il me semble avoir des lignes encore plus fines quand je ne faisais par initCanvas
+//mais juste un css w/h et canvas w/h a la même taille, sans scale, et un zoom + (avec lignes à +0.5). Alors là, j'avais des lignes ultrafines.
+window.onload = function() {
+}
+
+var zoomLevel = 32;
+var x = null;
+var y = null;
+var pencil = null;
+var pencilColors = { 'green': "rgb(34, 177, 76)", 'blue': "rgb(0, 162, 232)", 'brown': 'rgb(185, 122, 87)'};
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function initCanvas() {
+  let canvas = $("screen");
+  canvas.style.width = x * zoomLevel + "px";
+  canvas.style.height = y * zoomLevel + "px";
+
+  // Set actual size in memory (scaled to account for extra pixel density).
+  var scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas
+  canvas.width = x * zoomLevel * scale;
+  canvas.height = y * zoomLevel * scale;
+
+  // Normalize coordinate system to use css pixels.
+  let context = canvas.getContext('2d');
+  context.scale(scale, scale);
+  context.imageSmoothingEnabled = false;
+  context.translate(0.5, 0.5);
+  
+  console.log(canvas.width, canvas.height);
+  console.log(canvas.style.width, canvas.style.height);
+  console.log("Scale =", scale);
+}
+
+var startX;
+var startY;
+function startApplyPencil(event) {
+  let canvas = $("screen");
+  let context = canvas.getContext("2d");
+  let rect = canvas.getBoundingClientRect();
+  startX = Math.trunc((event.clientX - rect.left)/zoomLevel);
+  startY = Math.trunc((event.clientY - rect.top)/zoomLevel);
+}
+
+function applyPencil(event) {
+  console.log("click");
+  console.log(startX, startY);
+  let canvas = $("screen");
+  let context = canvas.getContext("2d");
+  let rect = canvas.getBoundingClientRect();
+  let i = Math.trunc((event.clientX - rect.left)/zoomLevel);
+  let j = Math.trunc((event.clientY - rect.top)/zoomLevel);
+  console.log(i, j);
+  context.fillStyle = pencilColors[pencil];
+  context.fillRect(i * zoomLevel, j * zoomLevel, zoomLevel, zoomLevel);
+}
+
+function redraw() {
+  let canvas = $("screen");
+  let context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = 'black';
+    context.lineWidth = 0.5; //0.25;
+    //for (let i = 0; i < x; i++) {
+    //  for (let j = 0; j < y; j++) {
+        //context.strokeRect(i * zoomLevel+0.5, j * zoomLevel+0.5, zoomLevel-0.5, zoomLevel-0.5);
+        //Last good : context.strokeRect(i * zoomLevel, j * zoomLevel, zoomLevel, zoomLevel);
+        
+        /*
+        context.beginPath();
+        context.moveTo((i+1) * zoomLevel, j * zoomLevel);
+        context.lineTo(i * zoomLevel, j * zoomLevel);
+        context.lineTo(i * zoomLevel, (j + 1) * zoomLevel);
+        context.stroke();
+        */
+    //  }
+    //}
+    
+    // GOOD with a grey line under the black 9h52 deal
+    context.lineWidth = 1 //0.5;
+    context.strokeRect(0, 0, x * zoomLevel -1, y * zoomLevel-1);
+    context.lineWidth = 1; //0.5; //0.25; //0.25;
+    for (let i = 1; i < x; i++) {
+      context.beginPath();
+      context.moveTo(i * zoomLevel, 0);
+      context.lineTo(i * zoomLevel, y * zoomLevel);
+      context.stroke();
+    }
+    for (let i = 1; i < y; i++) {
+      context.beginPath();
+      context.moveTo(0, i * zoomLevel);
+      context.lineTo(x * zoomLevel, i * zoomLevel);
+      context.stroke();
+    }
+    
+    // Alternate BUT TOO FAT
+    /*
+    context.lineWidth = 1;
+    for (let i = 0; i < x; i++) {
+      for (let j = 0; j < y; j++) {
+        context.strokeRect(i * zoomLevel, j * zoomLevel, zoomLevel-0.5, zoomLevel-0.5);
+        }
+     }
+     */
+     
+  console.log("redraw!");
+  // 9h13 : retour
+  // 9h15 : début PC Bureau
+  // 9h32 perfect :-) ! Il fallait différencier le rect (lw 0.5) autour + un lineWidth à 0,25 et ça marche ! J'ai une grille ultra fine :-)
+  // 9h33 : fin BSP Dungeon enfin Teddy enfin dessiner une grille fine quoi ;-)
+  // 9h35 : merde, dézoomé, ça ne marche pas !
+  // 9h46 : Ok, j'ai un truc satisfaisant sans plus.
+}
+
+function create() {
+  let eX = $("x");
+  let eY = $("y");
+  x = parseInt(eX.value);
+  y = parseInt(eY.value);
+  if (isNaN(x) || isNaN(y)) {
+    alert("X et Y doivent être des nombres.");
+    return;
+  }
+  if (x < 10 || y < 10) {
+    alert("X et Y doivent être supérieurs ou égaux à 10.");
+    return;
+  }
+  if (x > 100 || y > 100) {
+    alert("X et Y doivent être inférieurs ou égaux à 100.");
+    return;
+  }
+  eX.disabled = true;
+  eX.style.background = "lightgrey";
+  eY.disabled = true;
+  eY.style.background = "lightgrey";
+  $("bCreate").remove();
+  let canvas = document.createElement("canvas");
+  canvas.id = "screen";
+  canvas.style.background = "#EEEEEE";
+  //canvas.style.border = "1px solid black";
+  $("main").appendChild(canvas);
+  initCanvas();
+  canvas.addEventListener("click", applyPencil);
+  canvas.addEventListener("mousedown", startApplyPencil);
+  let control = $("control");
+  // Zoom in button
+  let eZoom = document.createElement("button");
+  eZoom.type = "button";
+  eZoom.innerText = "+";
+  eZoom.addEventListener("click", function(event) {
+    console.log("Zoom!");
+    zoomLevel += 8;
+    $("iZoomLevel").innerText = zoomLevel;
+    initCanvas();
+    redraw();
+  });
+  control.appendChild(eZoom);
+  // Zoom out button
+  let eUnzoom = document.createElement("button");
+  eUnzoom.type = "button";
+  eUnzoom.innerText = "-";
+  eUnzoom.addEventListener("click", function(event) {
+    console.log("Unzoom!");
+    zoomLevel -= 8;
+    $("iZoomLevel").innerText = zoomLevel;
+    initCanvas();
+    redraw();
+  });
+  control.appendChild(eUnzoom);
+  // Zoom level info
+  let info = document.createElement("span");
+  info.id = "iZoomLevel";
+  info.innerText = zoomLevel;
+  info.style.margin = "1em";
+  control.appendChild(info);
+  // Green
+  let colors = {
+    "green": " data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAAySURBVEhL7c0xEQAgDAAxtKCnZusQCZnY/i57zt35qoAKqIAKqIAKqIAKqIAK6HOw8wC78Hw9Xl1J9AAAAABJRU5ErkJggg==", 
+    "blue": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAA2SURBVEhL7c2hAQAwDITAb/afotN1jJp41DvOIDm5L02zrXGAHCAHyAFygBwgB8gBcoAcgOQDNpABymWUfqAAAAAASUVORK5CYII=",
+    "brown": " data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAA2SURBVEhL7c2hAQAwCMTAp0t2l27GdjX4KFzORKb63Ww60zUOkAPkADlADpAD5AA5QA6QA5B8N9oBysfL3yoAAAAASUVORK5CYII="};
+  for (const [key, value] of Object.entries(colors)) {
+    let bColor = document.createElement("button");
+    bColor.id = key;
+    bColor.type = "button";
+    bColor.style.border = "none";
+    bColor.style.margin = "0px";
+    bColor.style.padding = "0px";
+    let iColor = document.createElement("img");
+    iColor.width = 32;
+    iColor.height = 32;
+    iColor.src = value;
+    bColor.addEventListener("click", function(event) {
+      pencil = event.target.parentElement.id;
+      console.log(pencil);
+    });
+    bColor.appendChild(iColor);
+    control.appendChild(bColor);
+  }
+  pencil = "green";
+  // Redraw
+  canvas.addEventListener("load", redraw());
+}
+</script>
+</head>
+<body id="body">
+<div id="main" width="100%" style="text-align: center;">
+  <div id="control" style="margin-bottom: 1em;">
+  X : <input id="x" name="x" type="text" placeholder="Entier entre 10 et 100"></input> 
+  Y : <input id="y" name="y" type="text" placeholder="Entier entre 10 et 100"> 
+  <button id="bCreate" type="button" onclick="create()">Create</button>
+  </div>
+</div>
+</body>
+</html>
