@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+	<meta charset="utf-8">
+	<title>Teddy</title>
+	<link href="https://xitog.github.io/dgx/css/simplex.bootstrap.css" rel="stylesheet">
+	<style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 16px;
+		}
+
+		h1 {
+			width: 100%;
+			text-align: center;
+		}
+
+		pre {
+			border: 1px solid #ACAEB0;
+			background-color: #f5f5f5;
+			padding: 1rem;
+		}
+
+		table {
+			border-collapse: collapse;
+		}
+
+		td {
+			border: 1px solid black;
+		}
+
+		img.hidden {
+			display: none;
+		}
+
+		div.container {
+			width: 90%;
+		}
+
+		input[type="checkbox"] {
+			margin-bottom: 8px;
+			margin-right: 1em;
+			margin-left: 1em;
+		}
+
+		select,
+		input,
+		button {
+			margin-right: 1em;
+			margin-left: 1em;
+		}
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+	<script>
+		// Used for BSP Dungeon, TED, PUD...
+
+		// https://moddingwiki.shikadi.net/wiki/GameMaps_Format
+		// https://vpoupet.github.io/wolfenstein/docs/files
+
+		// Constantes globales
+		//---------------------------------------------
+
+		const TEDDY_DESCRIPTION = `<h1>Teddy</h1>
+<p>Teddy is an homage to two great tools of the past:</p>
+
+<ul>
+<li>TEd, a tool whose origins date back to 1988, made by John Romero and used for more than 30 games. It most famous version is TEd 5.0, dating from 1991 and used for Wolfenstein 3D from id Software.</li>
+<li>The map editor of the beloved Warcraft II (1995) from Blizzard Entertainment.</li>
+</ul>
+
+<h2>Description</h2>
+
+<p>Teddy is a program to edit tile grids, in order to make levels or maps for video games.</p>
+
+<p>Teddy uses the concept of mod. A mod is set of tiles and layers which will be available to create the map.</p>
+
+<ul>
+    <li>A map consists of one or more layers.</li>
+	<li>A layer can be a texture layer or an object layer both are a matrix of integer.</li>
+	<li>In a texture layer, an integer at x,y designates a tile.</li>
+	<li>A tile is picture with an associated integer value, for example 1 is used for water, 2 for grass. 0 always means empty.</li>
+	<li>In an object layer, an integer at x,y designates a element in a list of objects with properties.</li>
+</ul>
+
+<p>For a real-time strategy game for example, you can have a texture layer ground for the ground tiles and an object layer unit where you will store the units. A unit can have a player property, refering to the player it belongs.</p>
+
+<p>You can create your own mod, it is only a set of pictures for the tiles and a JSON file for configuring the mod.</p>
+
+<h2>License</h2>
+
+<p>Teddy is free and open source, licensed under the MIT licence.</p>
+
+<h2>Credits</h2>
+
+<p>Teddy is made by Damien Gouteux with ❤ in Occitania, France, 2019-2023.</p>
+
+<h2>Project history</h2>
+
+<ul>
+	<li>It origins date back from 2012, a first incarnation using Pygame.</li>
+	<li>The second incarnation in Python using Tkinter, started in 2019.</li>
+	<li>The third incarnation in JavaScript was made to read TED files.</li>
+</ul>`;
+
+		//---------------------------------------------
+		// Mod data
+		//---------------------------------------------
+
+		const mods = [];
+		mods.push({ // Make WarCraft 2, Western FPS and Teddy
+			'name': 'Wolfenstein 3D',
+			"layers": [
+				{
+					'name': "walls",
+					'icon': "layer-wall",
+					'textures': "walls"
+				},
+				{
+					'name': "actors",
+					'icon': "layer-object",
+					'textures': "actors"
+				}
+			],
+			"textures": {
+				'walls': {
+					1: "1b.png",   //   1 = pierre grise 1
+					2: "2b.png",   //   2 = pierre grise 2
+					3: "3b.png",   //   3 = pierre grise avec drapeau nazi
+					4: "4b.png",   //   4 = pierre grise avec portrait de AH
+					5: "5b.png",   //   5 = pierre bleu avec grille
+					6: "6b.png",   //   6 = pierre grise avec aigle doré
+					7: "7b.png",   //   7 = pierre bleu avec grille avec squelette
+					8: "8b.png",   //   8 = pierre bleu 1
+					9: "9b.png",   //   9 = pierre bleu 2
+					10: "10b.png",  //  10 = bois avec aigle argenté
+					11: "11b.png",  //  11 = bois avec portrait de AH
+					12: "12b.png",  //  12 = bois
+					13: "13b.png",  //  13 = porte de sortie de l'ascenseur sans bouton rouge (quand on commence un nouveau niveau)
+					14: "14b.png",  //  14 = métal vert avec panneau verboten
+					15: "15b.png",  //  15 = métal vert
+					16: "16b.png",  //  16 = sortie vers l'extérieur
+					17: "17b.png",  //  17 = brique rouge
+					18: "18b.png",  //  18 = brique rouge avec swastika jaune
+					19: "19b.png",
+					20: "20b.png",  //  20 = brique rouge avec aigle violet
+					21: "21b.png",  //  21 = intérieur ascenseur
+					25: "25b.png",
+					90: "90b.png",  //  90 = porte verte (H ou V ?)
+					91: "91b.png",  //  91 = porte verte (H ou V ?)
+					92: "92b.png",  //  92 = porte à clé or
+					93: "93b.png",  //  93 = porte à clé or
+					100: "100b.png", // 100 = porte d'entrée dans l'ascenceur avec un bouton rouge
+				},
+				'actors': {
+					19: "19_player_N.png",
+					20: "20_player_E.png",
+					21: "21_player_S.png",
+					22: "22_player_W.png",
+					23: "",
+					24: "",
+					25: "table_chairs.png",
+					26: "floor_lamp.png",
+					27: "chandelier.png",
+					28: "",
+					29: "",
+					30: "",
+					31: "tree.png",
+					32: "skeleton.png",
+					33: "",
+					34: "plant.png",
+					35: "vase.png",
+					36: "",
+					37: "ceiling_lamp.png",
+					38: "",
+					39: "armor.png",
+					40: "",
+					41: "",
+					42: "bones.png",
+					43: "",
+					44: "",
+					45: "",
+					46: "",
+					47: "food.png",
+					48: "medkit.png",
+					49: "clip.png",
+					50: "submachinegun.png",
+					51: "",
+					52: "treasure_cross.png",
+					53: "treasure_chalice.png",
+					54: "treasure_chest.png",
+					55: "treasure_crown.png",
+					56: "",
+					57: "",
+					58: "cask.png",
+					59: "",
+					60: "",
+					61: "",
+					62: "flag.png",
+					63: "",
+					64: "",
+					65: "",
+					66: "",
+					67: "",
+					68: "",
+					69: "",
+					70: "",
+					124: "dead_guard.png"
+				}
+			}
+		});
+
+		function validAsset(mod, plane, id) {
+			let textureSet = mods[mod]["layers"][plane]["textures"];
+			let value = mods[mod]["textures"][textureSet][id];
+			return value !== undefined && value !== "";
+		}
+
+		function getAsset(mod, plane, id) {
+			let textureSet = mods[mod]["layers"][plane]["textures"];
+			return mods[mod]["textures"][textureSet][id];
+		}
+
+		//---------------------------------------------
+		// Variables globales
+		//---------------------------------------------
+
+		let currentCanvasObject = null;
+		let startX;
+		let startY;
+		let pencil = null;
+		let pencilColors = { 'green': "rgb(34, 177, 76)", 'blue': "rgb(0, 162, 232)", 'brown': 'rgb(185, 122, 87)' };
+
+		// TED Data
+		let header = null;
+		let data = null;
+
+		//---------------------------------------------
+		// Fonctions globales
+		//---------------------------------------------
+
+		function $(id, test = false) {
+			let element = document.getElementById(id);
+			if (!test && (element === null || element === undefined)) {
+				alert(`Error : No element for ${id}`);
+			}
+			return element;
+		}
+
+		function getHeader() {
+			return header;
+		}
+
+		function setHeader(val) {
+			header = val;
+		}
+
+		function getData() {
+			return data;
+		}
+
+		function setData(val) {
+			data = val;
+		}
+
+		function isHeaderSet() {
+			return header != null;
+		}
+
+		function isDataSet() {
+			return data != null;
+		}
+
+		function hex(v) {
+			return '0x' + v.toString(16).padStart(8, '0') + ' (dec = ' + v + ')';
+		}
+
+		//---------------------------------------------
+		// View model
+		//---------------------------------------------
+
+		class Canvas {
+			constructor(mod, level, width, height, zoomLevel = 32) {
+				console.log('Creating canvas:', width, height, zoomLevel);
+				this.mod = mod;
+				this.level = level;
+				this.width = width;
+				this.height = height;
+				this.zoomLevel = zoomLevel;
+				currentCanvasObject = this;
+				this.reset();
+			}
+
+			getZoom() {
+				return parseInt($("iZoomLevel").innerText);
+			}
+
+			setZoomLevel(level) {
+				this.zoomLevel = level;
+				this.reset();
+			}
+
+			reset() {
+				this.canvas = document.createElement("canvas");
+				this.canvas.id = "canvas";
+				this.canvas.style.background = "#EEEEEE";
+				this.canvas.style.width = this.width * this.zoomLevel + "px";
+				this.canvas.style.height = this.height * this.zoomLevel + "px";
+
+				// Set actual size in memory (scaled to account for extra pixel density).
+				let scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas
+				this.canvas.width = this.width * this.zoomLevel * scale;
+				this.canvas.height = this.height * this.zoomLevel * scale;
+
+				// Normalize coordinate system to use css pixels.
+				let context = this.canvas.getContext('2d');
+				context.scale(scale, scale);
+				context.imageSmoothingEnabled = false;
+				context.translate(0.5, 0.5);
+
+				console.log(this.canvas.width, this.canvas.height);
+				console.log(this.canvas.style.width, this.canvas.style.height);
+				console.log("Scale =", scale);
+
+				this.canvas.addEventListener("click", applyPencil);
+				this.canvas.addEventListener("mousedown", startApplyPencil);
+
+				this.replaceChildrenOf("result");
+				this.draw();
+			}
+
+			replaceChildrenOf(target) {
+				$(target).replaceChildren(this.canvas);
+			}
+
+			draw(level=null) {
+				if (level !== null) {
+					this.level = level;
+				} else {
+					level = this.level;
+				}
+				let walls = level.getPlane(0);
+				let actors = level.getPlane(1);
+				let height = level.height;
+				let width = level.width;
+				//let content = document.createElement("div");
+				let unfill = $("unfill").checked;
+				let options = {
+					'grid': $("grid").checked,
+				};
+				let object = $("object").checked;
+				//let info = document.createElement("h2");
+				//info.innerText = level.name + ` planes 0 and 1 (${width}x${height})`;
+				//content.appendChild(info);
+				let x = 0;
+				let y = 0;
+				for (let nb = 0; nb < walls.content.length; nb++) {
+					let wall = walls.content[nb];
+					let actor = actors.content[nb];
+					let wall_img = null;
+					let actor_img = null;
+					let text = null;
+					// Getting the wall
+					if (validAsset(this.mod, 0, wall)) {
+						if (isWall(walls.content, x, y, width, height) || !unfill) {
+							wall_img = getAsset(this.mod, 0, wall); // 5 = #0000084 avec un carré de 56 au milieu, 8 = #000084, 9 = #00000056
+						} else if (unfill) {
+							wall_img = "void";
+						}
+					} else if (wall > 100) {
+						wall_img = "floor"; // #707070
+					}
+					// Getting the actor
+					if (object) {
+						if (validAsset(this.mod, 1, actor)) {
+							actor_img = getAsset(this.mod, 1, actor);
+						}
+						else if (actor != 0) {
+							text = actor;
+						}
+					}
+					// Drawing everything
+					this.mergeAt(x, y, wall_img, actor_img, text, options);
+					x += 1;
+					if (x == width) {
+						x = 0;
+						y += 1;
+					}
+				}
+			}
+
+			mergeAt(x, y, filename1, filename2, text = null, options = {}) {
+				const grid = 'grid' in options ? options['grid'] : true;
+				const FACTOR = this.zoomLevel;
+				let context = this.canvas.getContext("2d");
+				console.log(filename1);
+				context.drawImage(textures[filename1], x * FACTOR, y * FACTOR, FACTOR, FACTOR);
+				if (filename2 != null) {
+					if (textures[filename2] === null || !(filename2 in textures)) {
+						throw new Error(`Unknown obj: ${filename2} at ${x}x${y} and tex=${filename1}`);
+					}
+					context.drawImage(textures[filename2], x * FACTOR, y * FACTOR, FACTOR, FACTOR);
+				}
+				if (text != null) {
+					context.fillStyle = 'pink';
+					context.textBaseline = 'hanging';
+					context.fillText("" + text, x * FACTOR, y * FACTOR + 3, FACTOR);
+				}
+				if (grid) {
+					context.strokeStyle = "#000000";
+					context.strokeRect(x * FACTOR, y * FACTOR, FACTOR, FACTOR);
+				}
+			}
+		}
+
+		//---------------------------------------------
+		// Data model
+		//---------------------------------------------
+
+		class Header {
+			constructor(file, data) {
+				this.file = file;
+				this.total_nb_bytes = data.byteLength; // 402
+				this.nb_bytes = 0;
+				this.magic = new Uint16Array(data.slice(0, 2))[0]; // 43981 12h14
+				this.nb_bytes += 2;
+				this.ptr = [];
+				for (let i = 0; i < 100; i++) {
+					let p = new Uint32Array(data.slice(2 + i * 4, 2 + (i + 1) * 4))[0];
+					this.nb_bytes += 4;
+					if (p == 0xffffffff) // Avant on continuait jusqu'au max, 100 !
+					{
+						break;
+					}
+					this.ptr.push(p);
+				}
+			}
+
+			toString() {
+				const name = this.file.name;
+				const ext = name.split('.').pop();
+				const date = new Date(this.file.lastModified);
+				const size = this.file.size;
+				let s = 'File name = ' + name + " (" + ext + ")\n" +
+					'Created US Time = ' + date.toLocaleString('us-US', { timeZone: 'America/Chicago' }) + "\n" +
+					'Created FR Time = ' + date.toLocaleString('fr-FR', { timeZone: 'Europe/Brussels' }) + "\n" +
+					'File size = ' + size + "\n";
+				s += `Magix hex = ${hex(this.magic)}\n`;
+				s += `Number of bytes read = ${this.nb_bytes} / ${this.total_nb_bytes}\n`;
+				s += `Number of levels = ${this.ptr.length}\n`;
+				for (let i = 0; i < this.ptr.length; i++) {
+					s += `    - Lvl ${(i + 1).toString().padStart(2, ' ')} start at ${hex(this.ptr[i])}\n`
+				}
+				return s;
+			}
+		}
+
+		class Plane {
+			constructor(start, length, content) {
+				this.start = start;
+				this.length = length;
+				this.content = content;
+			}
+			toString() {
+				return `Plane @${this.start} #${this.length}`;
+			}
+		}
+
+		class Level {
+			constructor() {
+				this.planes = [];
+			}
+
+			getPlane(index) {
+				if (this.planes[index] === undefined) {
+					throw new Error("Non existant plane at " + index);
+				}
+				return this.planes[index];
+			}
+
+			toString() {
+				let s = this.name;
+				if (this.planes.length === 3) {
+					s = "[Starts]            : " + this.planes[0].start + ", " + this.planes[1].start + ", " + this.planes[2].start + "\n" +
+						"[CompressedLenghts] : " + this.planes[0].length + ", " + this.planes[1].length + ", " + this.planes[2].length + "\n" +
+						"[ReadLengths]       : " + this.planes[0].content.length + ", " + this.planes[1].content.length + ", " + this.planes[2].content.length + "\n" +
+						"[Sizes]             : " + this.width + "x" + this.length + " (" + (64 * 64) + ")\n" +
+						"[Name]              : " + this.name;
+				}
+				return s;
+			}
+		}
+
+		class LevelSet {
+			constructor(data, header) {
+				this.header = header;
+				let dec = new TextDecoder();
+				this.format = dec.decode(data.slice(0, 8));
+				this.levels = [];
+				for (let i of this.header.ptr) {
+					console.log(`Reading ${i}`);
+					this.levels.push(this.read_level(data, i, this.header.magic));
+				}
+				if (this.levels.length > 0) {
+					let lvl = this.levels[this.levels.length - 1];
+					let end = lvl.planes[2].start + lvl.planes[2].length;
+					console.log(">>>>>>> " + end);
+					console.log(">>>>>>> " + data.byteLength);
+					if (end < data.byteLength) {
+						this.ending = dec.decode(data.slice(end, data.byteLength));
+					}
+				}
+			}
+
+			getNames() {
+				let res = [];
+				console.log(this.levels);
+				for (let lvl of this.levels) {
+					console.log(typeof (lvl), lvl);
+					res.push(lvl.name);
+				}
+				return res;
+			}
+
+			read_level(data, startLevel, magic) {
+				let level = new Level();
+				let startPlane0 = new Uint32Array(data.slice(startLevel, startLevel + 4))[0];
+				let startPlane1 = new Uint32Array(data.slice(startLevel + 4, startLevel + 8))[0];
+				let startPlane2 = new Uint32Array(data.slice(startLevel + 8, startLevel + 12))[0];
+				let lengthPlane0 = new Uint16Array(data.slice(startLevel + 12, startLevel + 14))[0];
+				let lengthPlane1 = new Uint16Array(data.slice(startLevel + 14, startLevel + 16))[0];
+				let lengthPlane2 = new Uint16Array(data.slice(startLevel + 16, startLevel + 18))[0];
+				level.width = new Uint16Array(data.slice(startLevel + 18, startLevel + 20))[0];
+				level.height = new Uint16Array(data.slice(startLevel + 20, startLevel + 22))[0];
+				let dec = new TextDecoder();
+				level.name = dec.decode(data.slice(startLevel + 22, startLevel + 32));
+				let plane0 = this.rwle_expand(magic, data.slice(startPlane0, startPlane0 + lengthPlane0));
+				let plane1 = this.rwle_expand(magic, data.slice(startPlane1, startPlane1 + lengthPlane1));
+				let plane2 = this.rwle_expand(magic, data.slice(startPlane2, startPlane2 + lengthPlane2));
+				level.planes.push(new Plane(startPlane0, lengthPlane0, plane0));
+				level.planes.push(new Plane(startPlane1, lengthPlane1, plane1));
+				level.planes.push(new Plane(startPlane2, lengthPlane2, plane2));
+				return level;
+			}
+
+			rwle_expand(magic, data) {
+				let size = new Uint16Array(data.slice(0, 2))[0];
+				console.log("RWLE EXPAND SIZE = " + size);
+				let expanded = [];
+				let i = 2;
+				while (i < data.byteLength) {
+					let v = new Uint16Array(data.slice(i, i + 2))[0];
+					i += 2
+					if (v == magic) {
+						let count = new Uint16Array(data.slice(i, i + 2))[0];
+						i += 2
+						let value = new Uint16Array(data.slice(i, i + 2))[0];
+						i += 2
+						expanded = expanded.concat(Array(count).fill(value));
+					} else {
+						expanded.push(v);
+					}
+				}
+				return expanded;
+			}
+
+			toString() {
+				let s = "Format: " + this.format + "\n";
+				let nb = 0;
+				for (let i of Object.values(this.levels)) {
+					s += `[Level ${nb}]\n` + i.toString() + "\n";
+					nb += 1;
+				}
+				s += "Ending: " + this.ending + "\n";
+				return s;
+			}
+		}
+
+		//---------------------------------------------
+		// GUI functions
+		//---------------------------------------------
+
+		function isWall(data, x, y, width, height) {
+			return (
+				(x - 1 >= 0 && y - 1 >= 0 && data[x - 1 + (y - 1) * width] > 100)
+				|| (y - 1 >= 0 && data[x + (y - 1) * width] > 100)
+				|| (x + 1 < width && y - 1 >= 0 && data[x + 1 + (y - 1) * width] > 100)
+				|| (x - 1 >= 0 && data[x - 1 + y * width] > 100)
+				|| (x + 1 >= 0 && data[x + 1 + y * width] > 100)
+				|| (x - 1 >= 0 && y + 1 >= 0 && data[x - 1 + (y + 1) * width] > 100)
+				|| (y + 1 >= 0 && data[x + (y + 1) * width] > 100)
+				|| (x + 1 < width && y + 1 >= 0 && data[x + 1 + (y + 1) * width] > 100)
+			);
+		}
+
+		//--------------------------------------------------------------------------------------------------------------
+		// Menu : global functions
+		//--------------------------------------------------------------------------------------------------------------
+
+		function setVisibilityAndClear(id, visibility, clear = false) {
+			let elem = $(id);
+			if (visibility) {
+				elem.style.display = 'block';
+			} else {
+				elem.style.display = 'none';
+			}
+			if (clear) {
+				elem.innerHTML = '';
+			}
+			return elem;
+		}
+
+		function displayOptions(id) {
+			// Clear
+			if ($("ted_level", true) != null) {
+				$("ted_level").remove();
+			}
+			let others = document.querySelectorAll("[data-btn=true]");
+			for (let o of others) {
+				o.remove();
+			}
+			others = document.getElementsByTagName('fieldset');
+			for (let o in others) {
+				others.item(o).style.display = 'none';
+			}
+			let elem = $(id);
+			elem.style.display = 'flex';
+			setVisibilityAndClear('options', true);
+		}
+
+		function displayMod(id) {
+			let others = document.getElementsByTagName('fieldset');
+			let target = null;
+			for (let o in others) {
+				if (others.item(o).style.display === 'flex') {
+					target = others.item(o);
+				}
+			}
+			if (target === null) {
+				throw new Error("Internal error: no option set.");
+			}
+			let controls = $("controls");
+			if (id === 'ted') {
+				let select = createSelect("ted_level", getData().getNames(), displayTEDSelectChanged);
+				controls.appendChild(select);
+			} else if (id === 'new') {
+				let colors = {
+					"green": " data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAAySURBVEhL7c0xEQAgDAAxtKCnZusQCZnY/i57zt35qoAKqIAKqIAKqIAKqIAK6HOw8wC78Hw9Xl1J9AAAAABJRU5ErkJggg==",
+					"blue": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAA2SURBVEhL7c2hAQAwDITAb/afotN1jJp41DvOIDm5L02zrXGAHCAHyAFygBwgB8gBcoAcgOQDNpABymWUfqAAAAAASUVORK5CYII=",
+					"brown": " data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAA2SURBVEhL7c2hAQAwCMTAp0t2l27GdjX4KFzORKb63Ww60zUOkAPkADlADpAD5AA5QA6QA5B8N9oBysfL3yoAAAAASUVORK5CYII="
+				};
+				for (const [key, value] of Object.entries(colors)) {
+					let bColor = document.createElement("button");
+					bColor.id = key;
+					bColor.setAttribute("data-btn", true);
+					bColor.type = "button";
+					bColor.style.border = "none";
+					bColor.style.margin = "0px";
+					bColor.style.padding = "0px";
+					let iColor = document.createElement("img");
+					iColor.width = 32;
+					iColor.height = 32;
+					iColor.src = value;
+					bColor.addEventListener("click", function (event) {
+						pencil = event.target.parentElement.id;
+						console.log(pencil);
+					});
+					bColor.appendChild(iColor);
+					controls.appendChild(bColor);
+				}
+				pencil = "green";
+			}
+			// Zoom in button
+			let eZoom = document.createElement("button");
+			eZoom.setAttribute("data-btn", true);
+			eZoom.type = "button";
+			eZoom.innerText = "+";
+			eZoom.addEventListener("click", function (event) {
+				console.log("Unzoom!");
+				let info = $("iZoomLevel");
+				let zoomLevel = parseInt(info.innerText);
+				zoomLevel *= 2;
+				info.innerText = zoomLevel;
+				currentCanvasObject.setZoomLevel(zoomLevel);
+			});
+			controls.appendChild(eZoom);
+			// Zoom out button
+			let eUnzoom = document.createElement("button");
+			eUnzoom.setAttribute("data-btn", true);
+			eUnzoom.type = "button";
+			eUnzoom.innerText = "-";
+			eUnzoom.addEventListener("click", function (event) {
+				console.log("Unzoom!");
+				let info = $("iZoomLevel");
+				let zoomLevel = parseInt(info.innerText);
+				zoomLevel /= 2;
+				info.innerText = zoomLevel;
+				currentCanvasObject.setZoomLevel(zoomLevel);
+			});
+			controls.appendChild(eUnzoom);
+			// Zoom level info
+			let info = document.createElement("span");
+			info.setAttribute("data-btn", true);
+			info.id = "iZoomLevel";
+			info.innerText = 32;
+			info.style.margin = "1em";
+			controls.appendChild(info);
+		}
+
+		//--------------------------------------------------------------------------------------------------------------
+		// Menu : New
+		//--------------------------------------------------------------------------------------------------------------
+
+		function displayNewOptions() {
+			setVisibilityAndClear('result', false, true);
+			setVisibilityAndClear('bCreate', false);
+			displayNewOptionsChanged();
+			displayOptions('controls_new');
+		}
+
+		function displayNewPanel() {
+			let mod = $("selectMods").value;
+			let width = parseInt($("w").value);
+			let height = parseInt($("h").value);
+			let zoomLevel = $("iZoomLevel", true) ? parseInt($("iZoomLevel").value) : 32;
+			if (isNaN(width) || isNaN(height)) {
+				alert("X et Y doivent être des nombres.");
+				return;
+			}
+			if (width < 1 || height < 1) {
+				alert("X et Y doivent être supérieurs ou égaux à 1.");
+				return;
+			}
+			if (width > 100 || height > 100) {
+				alert("X et Y doivent être inférieurs ou égaux à 100.");
+				return;
+			}
+			displayOptions('controls');
+			displayMod('new');
+			let level = new Level();
+			level.width = width;
+			level.height = height;
+			level.name = "New";
+			level.planes.push(new Plane(0, 64 * 64, Array(width * height).fill(3)));
+			level.planes.push(new Plane(0, 64 * 64, Array(width * height).fill(0)));
+			let canvas = new Canvas(mod, level, level.width, level.height, zoomLevel);
+			setVisibilityAndClear('result', true);
+			return canvas;
+		}
+
+		function startApplyPencil(event) {
+			let zoom = currentCanvasObject.getZoom();
+			let canvas = $("canvas");
+			let rect = canvas.getBoundingClientRect();
+			startX = Math.trunc((event.clientX - rect.left) / zoom);
+			startY = Math.trunc((event.clientY - rect.top) / zoom);
+		}
+
+		function applyPencil(event) {
+			let zoom = currentCanvasObject.getZoom();
+			console.log(`click :`, zoom, startX, startY);
+			let canvas = $("canvas");
+			let context = canvas.getContext("2d");
+			let rect = canvas.getBoundingClientRect();
+			let i = Math.trunc((event.clientX - rect.left) / zoom);
+			let j = Math.trunc((event.clientY - rect.top) / zoom);
+			console.log(i, j);
+			context.fillStyle = pencilColors[pencil];
+			context.fillRect(i * zoom, j * zoom, zoom, zoom);
+		}
+
+		function displayNewOptionsChanged() {
+			let w = parseInt($("w").value);
+			let h = parseInt($("h").value);
+			if (Number.isInteger(w)
+				&& Number.isInteger(h)
+				&& w >= 1
+				&& h >= 1
+				&& w <= 100
+				&& h <= 100) {
+				setVisibilityAndClear('bCreate', true);
+			}
+		}
+
+		//--------------------------------------------------------------------------------------------------------------
+		// Menu : About
+		//--------------------------------------------------------------------------------------------------------------
+
+		function displayAboutPanel() {
+			setVisibilityAndClear('options', false);
+			let result = setVisibilityAndClear('result', true, true);
+			let elem = document.createElement("div");
+			elem.innerHTML = TEDDY_DESCRIPTION;
+			result.appendChild(elem);
+		}
+
+		//--------------------------------------------------------------------------------------------------------------
+		// Menu : Load TED
+		//--------------------------------------------------------------------------------------------------------------
+
+		function displayLoadTEDOptions() {
+			setVisibilityAndClear('result', false, true);
+			header = null;
+			data = null;
+			setVisibilityAndClear('bLoadTED', false);
+			displayOptions('controls_load_ted');
+		}
+
+		function displayTEDPanel() {
+			let set = getData();
+			setVisibilityAndClear('result', false, true);
+			let zoomLevel = $("iZoomLevel", true) ? parseInt($("iZoomLevel").value) : 32;
+			let canvas = new Canvas(0, set.levels[0], set.levels[0].width, set.levels[0].height, zoomLevel);
+			displayOptions('controls');
+			displayMod('ted');
+			setVisibilityAndClear('result', true);
+			return canvas;
+		}
+
+		function displayTEDSelectChanged() {
+			let set = getData();
+			let ilevel = $("ted_level").value;
+			console.log("ilevel = " + ilevel);
+			currentCanvasObject.draw(set.levels[ilevel]);
+		}
+
+		function handleFiles(files, type) {
+			if (files.length > 0) {
+				let file = files[0];
+				let reader = new FileReader();
+				reader.onloadend =
+					function (event) {
+						if (type === 'header') {
+							let input = $("fileInput1");
+							let file = input.files[0];
+							let header = new Header(file, event.target.result);
+							log(header.toString());
+							setHeader(header);
+						} else {
+							if (!isHeaderSet()) {
+								alert("Set a map header file first!");
+								return;
+							}
+							let set = new LevelSet(event.target.result, getHeader());
+							log(set.toString());
+							setData(set);
+						}
+						if (isDataSet() && isHeaderSet()) {
+							let elem = $("bLoadTED");
+							elem.style.display = 'inline';
+						}
+					}
+					;
+				reader.readAsArrayBuffer(file);
+			}
+		}
+
+		function createSelect(id, options, onchange = null) {
+			let select = document.createElement("select");
+			select.id = id;
+			if (onchange !== null) {
+				select.onchange = onchange;
+			}
+			let nb = 0;
+			console.log(options);
+			for (let i of options) {
+				let option = document.createElement("option");
+				option.value = nb;
+				option.text = i;
+				select.appendChild(option);
+				nb += 1;
+			}
+			return select;
+		}
+
+		//--------------------------------------------------------------------------------------------------------------
+		// Utils
+		//--------------------------------------------------------------------------------------------------------------
+
+		function log(msg) {
+			let result = setVisibilityAndClear("result", true);
+			let console = $("console", true);
+			if (console == null) {
+				console = document.createElement("pre");
+				console.id = "console";
+				result.appendChild(console);
+			}
+			console.innerText = console.innerText + msg;
+		}
+
+		function reset() {
+			let unfill = $("unfill");
+			let grid = $("grid");
+			unfill.checked = false;
+			grid.checked = true;
+		}
+
+		var textures = {};
+
+		function load() {
+			// Create mod selector
+			let controls = $("controls_new");
+			let selectMods = createSelect("selectMods", ["teddy", "warcraft2", "wolfenstein", "western"]);
+			controls.prepend(selectMods);
+			let elem = document.createElement("label");
+			elem.setAttribute("for", "selectMods");
+			elem.innerText = "Mod :";
+			controls.prepend(elem);
+			// Load pictures
+			for (let o of document.images) {
+				console.log('Loading: ', o.id, o);
+				textures[o.id] = o;
+			}
+		}
+
+		window.onload = load;
+	</script>
+</head>
+
+<body>
+	<div id="main" class="container">
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+						aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#"><b>Teddy</b></a>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li><a href="#new" onclick="displayNewOptions()">New</a></li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+								aria-haspopup="true" aria-expanded="false">Load... <span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="#">Teddy format</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="#ted" onclick="displayLoadTEDOptions()">TED format</a></li>
+								<li><a href="#">PUD format</a></li>
+								<li><a href="#">Tiled format</a></li>
+							</ul>
+						</li>
+					</ul>
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="#about" onclick="displayAboutPanel()">About</a></li>
+						<li><span style="color: #AAAAAA; padding-top: 11px; padding-bottom: 11px; position: relative; line-height: 18px; display: block;">v 0.1</span></li>
+						<li>
+							<a href="https://xitog.github.io/dgx/index.html">
+								<img width="18" height="18"
+									src="https://xitog.github.io/dgx/img/icons/house_delapouite_ccby30.png"
+									alt="Home" />
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div id="options" style="border: 1px solid #eeeeee; display: none; padding: 1em;">
+			<fieldset id="controls_new" style="display: none">
+				<legend>New map</legend>
+				<label for="w">Width :</label><input id="w" name="w" type="text"
+					placeholder="Integer between 10 and 100" onchange="displayNewOptionsChanged()" />
+				<label for="h">Height :</label><input id="h" name="h" type="text"
+					placeholder="Integer between 10 and 100" onchange="displayNewOptionsChanged()" />
+				<button id="bCreate" type="button" onclick="displayNewPanel()">Create</button>
+			</fieldset>
+
+			<fieldset id="controls_load_ted" style="display: none">
+				<legend>Load TED files</legend>
+				<label for="fileInput1">En-têtes :</label><input type="file" id="fileInput1"
+					onchange="handleFiles(this.files, 'header')">
+				<label for="fileInput2">Contenus :</label><input type="file" id="fileInput2"
+					onchange="handleFiles(this.files, 'content')">
+				<label for="cc">Carmarck Compression</label><input type="checkbox" id="cc">
+				<button id="bLoadTED" type="button" onclick="displayTEDPanel()">Load</button>
+			</fieldset>
+
+			<fieldset id="controls" style="display: none">
+				<legend>Options</legend>
+				<label for="unfill">Unfill </label><input type="checkbox" id="unfill" onchange="currentCanvasObject.draw()">
+				<label for="grid">Grid </label><input type="checkbox" id="grid" onchange="currentCanvasObject.draw()">
+				<label for="object">Object </label><input type="checkbox" id="object" class="spe" onchange="currentCanvasObject.draw()"
+					checked>
+			</fieldset>
+		</div>
+		<div id="result" style="border: 1px solid #eeeeee; display: none; padding-top: 1em; padding-bottom: 2em;">
+		</div>
+		<div id="data">
+			<img id="void" class="hidden" src="mods/wolfenstein/plane0/void.png" alt="v">
+			<img id="floor" class="hidden" src="mods/wolfenstein/plane0/floor.png" alt="f">
+
+			<img id="1b.png" class="hidden" src="mods/wolfenstein/plane0/1b.png" alt="1">
+			<img id="2b.png" class="hidden" src="mods/wolfenstein/plane0/2b.png" alt="2">
+			<img id="3b.png" class="hidden" src="mods/wolfenstein/plane0/3b.png" alt="3">
+			<img id="4b.png" class="hidden" src="mods/wolfenstein/plane0/4b.png" alt="4">
+			<img id="5b.png" class="hidden" src="mods/wolfenstein/plane0/5b.png" alt="5">
+			<img id="6b.png" class="hidden" src="mods/wolfenstein/plane0/6b.png" alt="6">
+			<img id="7b.png" class="hidden" src="mods/wolfenstein/plane0/7b.png" alt="7">
+			<img id="8b.png" class="hidden" src="mods/wolfenstein/plane0/8b.png" alt="8">
+			<img id="9b.png" class="hidden" src="mods/wolfenstein/plane0/9b.png" alt="9">
+			<img id="10b.png" class="hidden" src="mods/wolfenstein/plane0/10b.png" alt="10">
+			<img id="11b.png" class="hidden" src="mods/wolfenstein/plane0/11b.png" alt="11">
+			<img id="12b.png" class="hidden" src="mods/wolfenstein/plane0/12b.png" alt="12">
+			<img id="13b.png" class="hidden" src="mods/wolfenstein/plane0/13b.png" alt="13">
+			<img id="14b.png" class="hidden" src="mods/wolfenstein/plane0/14b.png" alt="14">
+			<img id="15b.png" class="hidden" src="mods/wolfenstein/plane0/15b.png" alt="15">
+			<img id="16b.png" class="hidden" src="mods/wolfenstein/plane0/16b.png" alt="16">
+			<img id="17b.png" class="hidden" src="mods/wolfenstein/plane0/17b.png" alt="17">
+			<img id="18b.png" class="hidden" src="mods/wolfenstein/plane0/18b.png" alt="18">
+			<img id="19b.png" class="hidden" src="mods/wolfenstein/plane0/19b.png" alt="19">
+			<img id="20b.png" class="hidden" src="mods/wolfenstein/plane0/20b.png" alt="20">
+			<img id="21b.png" class="hidden" src="mods/wolfenstein/plane0/21b.png" alt="21">
+			<img id="25b.png" class="hidden" src="mods/wolfenstein/plane0/25b.png" alt="25">
+			<img id="90b.png" class="hidden" src="mods/wolfenstein/plane0/90b.png" alt="90">
+			<img id="91b.png" class="hidden" src="mods/wolfenstein/plane0/91b.png" alt="91">
+			<img id="92b.png" class="hidden" src="mods/wolfenstein/plane0/92b.png" alt="92">
+			<img id="93b.png" class="hidden" src="mods/wolfenstein/plane0/93b.png" alt="93">
+			<img id="100b.png" class="hidden" src="mods/wolfenstein/plane0/100b.png" alt="100">
+
+			<img id="19_player_N.png" class="hidden" src="mods/wolfenstein/plane1/19_player_N.png" alt="nor">
+			<img id="20_player_E.png" class="hidden" src="mods/wolfenstein/plane1/20_player_E.png" alt="eas">
+			<img id="21_player_S.png" class="hidden" src="mods/wolfenstein/plane1/21_player_S.png" alt="sou">
+			<img id="22_player_W.png" class="hidden" src="mods/wolfenstein/plane1/22_player_W.png" alt="wes">
+			<img id="tree.png" class="hidden" src="mods/wolfenstein/plane1/tree.png" alt="tree">
+			<img id="flag.png" class="hidden" src="mods/wolfenstein/plane1/flag.png" alt="flag">
+			<img id="vase.png" class="hidden" src="mods/wolfenstein/plane1/vase.png" alt="vase">
+			<img id="table.png" class="hidden" src="mods/wolfenstein/plane1/table.png" alt="table">
+			<img id="table_chairs.png" class="hidden" src="mods/wolfenstein/plane1/table_chairs.png" alt="tablechairs">
+			<img id="chandelier.png" class="hidden" src="mods/wolfenstein/plane1/chandelier.png" alt="chand">
+			<img id="ceiling_lamp.png" class="hidden" src="mods/wolfenstein/plane1/ceiling_lamp.png" alt="clam">
+			<img id="floor_lamp.png" class="hidden" src="mods/wolfenstein/plane1/floor_lamp.png" alt="famous">
+			<img id="skeleton.png" class="hidden" src="mods/wolfenstein/plane1/skeleton.png" alt="skeleton">
+			<img id="armor.png" class="hidden" src="mods/wolfenstein/plane1/armor.png" alt="armor">
+			<img id="plant.png" class="hidden" src="mods/wolfenstein/plane1/plant.png" alt="pla">
+			<img id="bones.png" class="hidden" src="mods/wolfenstein/plane1/bones.png" alt="bon">
+			<img id="food.png" class="hidden" src="mods/wolfenstein/plane1/food.png" alt="foo">
+			<img id="clip.png" class="hidden" src="mods/wolfenstein/plane1/clip.png" alt="cli">
+			<img id="submachinegun.png" class="hidden" src="mods/wolfenstein/plane1/submachinegun.png" alt="submg">
+			<img id="treasure_cross.png" class="hidden" src="mods/wolfenstein/plane1/treasure_cross.png" alt="">
+			<img id="treasure_chalice.png" class="hidden" src="mods/wolfenstein/plane1/treasure_chalice.png" alt="cha">
+			<img id="treasure_chest.png" class="hidden" src="mods/wolfenstein/plane1/treasure_chest.png" alt="che">
+			<img id="treasure_crown.png" class="hidden" src="mods/wolfenstein/plane1/treasure_crown.png" alt="cro">
+			<img id="cask.png" class="hidden" src="mods/wolfenstein/plane1/cask.png" alt="cask">
+			<img id="dead_guard.png" class="hidden" src="mods/wolfenstein/plane1/dead_guard.png" alt="dg">
+			<img id="medkit.png" class="hidden" src="mods/wolfenstein/plane1/medkit.png" alt="medkit">
+		</div>
+	</div>
+</body>
+
+</html>
