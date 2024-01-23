@@ -420,6 +420,7 @@
 
 		class Header {
 			constructor(file, data) {
+				console.log(data.constructor.name);
 				this.file = file;
 				this.total_nb_bytes = data.byteLength; // 402
 				this.nb_bytes = 0;
@@ -446,11 +447,13 @@
 					'Created US Time = ' + date.toLocaleString('us-US', { timeZone: 'America/Chicago' }) + "\n" +
 					'Created FR Time = ' + date.toLocaleString('fr-FR', { timeZone: 'Europe/Brussels' }) + "\n" +
 					'File size = ' + size + "\n";
-				s += `Magix hex = ${hex(this.magic)}\n`;
+				s += 'Magix hex = ' + this.magic.toString(16).padStart(4, '0') + '\n';
 				s += `Number of bytes read = ${this.nb_bytes} / ${this.total_nb_bytes}\n`;
 				s += `Number of levels = ${this.ptr.length}\n`;
 				for (let i = 0; i < this.ptr.length; i++) {
-					s += `    - Lvl ${(i + 1).toString().padStart(2, ' ')} start at ${hex(this.ptr[i])}\n`
+					s += `    - Lvl ${(i + 1).toString().padStart(2, ' ')} start at `;
+					s += this.ptr[i].toString(16).padStart(4, '0') + '(';
+					s += this.ptr[i] + ')\n';
 				}
 				return s;
 			}
@@ -805,6 +808,23 @@
 			data = null;
 			setVisibilityAndClear('bLoadTED', false);
 			displayOptions('controls_load_ted');
+
+			let div = document.getElementById("fileInput1");
+			console.log('>>>>> ', div);
+			let label = document.createElement('label');
+			label.setAttribute("for", "fileInput1");
+			label.innerText = "En-têtes :";
+			div.append(label);
+			let input = document.createElement('input');
+			input.setAttribute('type', 'file');
+			input.setAttribute('id', 'fileInput1');
+			input.addEventListener('onchange', xHandler);
+			div.append(input);
+		}
+
+		function xHandler() {
+			alert(this.files);
+			handleFiles(this.files, 'header');
 		}
 
 		function displayTEDPanel() {
@@ -912,6 +932,7 @@
 				console.log('Loading: ', o.id, o);
 				textures[o.id] = o;
 			}
+			displayLoadTEDOptions();
 		}
 
 		window.onload = load;
