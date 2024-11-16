@@ -1,3 +1,5 @@
+-- run with lua.exe main.lua
+
 local function hex(data)
     return string.format("0x%X", data)
 end
@@ -37,7 +39,7 @@ function Header:read()
     f:close()
 end
 function Header:info()
-    print(hex(self.compression_mark))
+    print("Compression mark : " .. hex(self.compression_mark))
 end
 
 local Level = {}
@@ -46,10 +48,33 @@ function Level.new(filename, autoread)
     if autoread == nil then
         autoread = true
     end
-    local self = setmetatable({}, Header)
-    self.classname = 'Header'
+    local self = setmetatable({}, Level)
+    self.classname = 'Level'
     self.filename = filename
+    if autoread then
+        self:read()
+    end
 end
 
-local h = Header.new("MAPHEAD.WL1")
+function Level:read()
+    local f = io.open(self.filename, "rb")
+    local data = f:read("*all")
+end
+
+--[[
+UInt32LE 	Offset in file of plane 0 compressed data
+UInt32LE 	Offset in file of plane 1 compressed data
+UInt32LE 	Offset in file of plane 2 compressed data (unused)
+UInt16LE 	Size in bytes of plane 0 compressed data
+UInt16LE 	Size in bytes of plane 1 compressed data
+UInt16LE 	Size in bytes of plane 2 compressed data (unused)
+UInt16LE 	Width of the level grid (always 64)
+UInt16LE 	Height of the level grid (always 64)
+Char[16] 	0-terminated name of the map (for instance “Wolf3 Map1”)
+--]]
+
+local h = Header.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
 h:info()
+local lvl = Level.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1")
+
+-- 0x8 1er niveau
