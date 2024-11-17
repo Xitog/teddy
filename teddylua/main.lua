@@ -1,80 +1,105 @@
 -- run with lua.exe main.lua
-
-local function hex(data)
-    return string.format("0x%X", data)
-end
+local function hex(data) return string.format("0x%X", data) end
 
 local Header = {}
 Header.__index = Header
 function Header.new(filename, autoread)
-    if autoread == nil then
-        autoread = true
-    end
+    if autoread == nil then autoread = true end
     local self = setmetatable({}, Header)
     self.classname = 'Header'
     self.filename = filename
     self.compression_mark = nil
-    self.levels = {}
-    if autoread then
-        self:read()
-    end
+    self.level_offsets = {}
+    if autoread then self:read() end
     return self
 end
-function Header:addLevel(offset)
-    table.insert(self.levels, offset)
-end
+function Header:addLevel(offset) table.insert(self.level_offsets, offset) end
 function Header:read()
     local f = io.open(self.filename, "rb")
     local data = f:read("*all")
     self.compression_mark = string.unpack("<I2", string.sub(data, 1, 2)) -- Unsigned int 16 little endian
-    for i=0, 99, 1 do
+    for i = 0, 99, 1 do
         -- 1 car on indice depuis 1, 2 car on a lu un UINT16LE, *4 car on va de UINT32LE en UINT32LE
-        local from = 1+2+(i*4)
-        local to = 1+2+(i+1)*4
+        local from = 1 + 2 + (i * 4)
+        local to = 1 + 2 + (i + 1) * 4
         local raw_string = string.sub(data, from, to)
         local n = string.unpack("<I4", raw_string)
-        print(i+1, "from", from, "to", to, hex(n), n)
+        print(i + 1, "from", from, "to", to, hex(n), n)
         self:addLevel(n)
     end
     f:close()
 end
-function Header:info()
-    print("Compression mark : " .. hex(self.compression_mark))
-end
+function Header:info() print("Compression mark : " .. hex(self.compression_mark)) end
 
 local Level = {}
 Level.__index = Level
-function Level.new(filename, autoread)
-    if autoread == nil then
-        autoread = true
-    end
+function Level.new(offset0, offset1, offset2, size0, size1, size2, name)
     local self = setmetatable({}, Level)
+    self.offset0 = offset0
+    self.offset1 = offset1
+    self.offset2 = offset2
+    self.size0 = size0
+    self.size1 = size1
+    self.size2 = size2
+    self.name = name
+    return self
+end
+
+local LevelFile = {}
+LevelFile.__index = LevelFile
+function LevelFile.new(filename, header, autoread)
+    if autoread == nil then autoread = true end
+    local self = setmetatable({}, LevelFile)
     self.classname = 'Level'
     self.filename = filename
-    if autoread then
-        self:read()
-    end
+    self.header = header
+    self.levels = {}
+    if autoread then self:read() end
+    return self
 end
 
-function Level:read()
+function LevelFile:read()
     local f = io.open(self.filename, "rb")
     local data = f:read("*all")
+    for i = 1, 100, 1 do
+        local start = self.header.level_offsets[i]; --           8
+        if start == 0xFFFFFFFF then break end
+        local plane0_offset = string.unpack("<I4", string.sub(data, 1 + start,
+                                                              1 + start + 4)) -- UInt32LE  8-12
+        local plane1_offset = string.unpack("<I4", string.sub(data,
+                                                              1 + start + 4,
+                                                              1 + start + 8)) -- UInt32LE 12-16
+        local plane2_offset = string.unpack("<I4", string.sub(data,
+                                                              1 + start + 8,
+                                                              1 + start + 12)) -- UInt32LE 16-20
+        local plane0_size = string.unpack("<I2", string.sub(data,
+                                                            1 + start + 12,
+                                                            1 + start + 14)) -- UInt16LE 20-22
+        local plane1_size = string.unpack("<I2", string.sub(data,
+                                                            1 + start + 14,
+                                                            1 + start + 16)) -- UInt16LE 22-24
+        local plane2_size = string.unpack("<I2", string.sub(data,
+                                                            1 + start + 16,
+                                                            1 + start + 18)) -- UInt16LE 24-26
+        local width = string.unpack("<I2", string.sub(data, 1 + start + 18,
+                                                      1 + start + 20)) -- UInt16LE 26-28
+        local height = string.unpack("<I2", string.sub(data, 1 + start + 20,
+                                                       1 + start + 22)) -- UInt16LE 28-30
+        local name = string.unpack("z", string.sub(data, 1 + start + 22,
+                                                   1 + start + 38)) -- Char[16] 30-46
+        table.insert(self.levels,
+                     Level.new(plane0_offset, plane1_offset, plane2_offset,
+                               plane0_size, plane1_size, plane2_size, name))
+    end
 end
-
---[[
-UInt32LE 	Offset in file of plane 0 compressed data
-UInt32LE 	Offset in file of plane 1 compressed data
-UInt32LE 	Offset in file of plane 2 compressed data (unused)
-UInt16LE 	Size in bytes of plane 0 compressed data
-UInt16LE 	Size in bytes of plane 1 compressed data
-UInt16LE 	Size in bytes of plane 2 compressed data (unused)
-UInt16LE 	Width of the level grid (always 64)
-UInt16LE 	Height of the level grid (always 64)
-Char[16] 	0-terminated name of the map (for instance “Wolf3 Map1”)
---]]
+function LevelFile:info()
+    for i, v in ipairs(self.levels) do print(i .. "|" .. v.name .. "|") end
+end
 
 local h = Header.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
 h:info()
-local lvl = Level.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1")
+local lvl = LevelFile.new(
+                "../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1", h)
+lvl:info()
 
 -- 0x8 1er niveau
