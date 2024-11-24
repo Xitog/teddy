@@ -1,20 +1,20 @@
 -- run with lua.exe main.lua
 local function hex(data) return string.format("0x%X", data) end
 
-local Header = {}
-Header.__index = Header
-function Header.new(filename, autoread)
+local HeaderFile = {}
+HeaderFile.__index = HeaderFile
+function HeaderFile.new(filename, autoread)
     if autoread == nil then autoread = true end
-    local self = setmetatable({}, Header)
-    self.classname = 'Header'
+    local self = setmetatable({}, HeaderFile)
+    self.classname = 'HeaderFile'
     self.filename = filename
     self.compression_mark = nil
     self.level_offsets = {}
     if autoread then self:read() end
     return self
 end
-function Header:addLevel(offset) table.insert(self.level_offsets, offset) end
-function Header:read()
+function HeaderFile:addLevel(offset) table.insert(self.level_offsets, offset) end
+function HeaderFile:read()
     local f = io.open(self.filename, "rb")
     local data = f:read("*all")
     self.compression_mark = string.unpack("<I2", string.sub(data, 1, 2)) -- Unsigned int 16 little endian
@@ -29,11 +29,12 @@ function Header:read()
     end
     f:close()
 end
-function Header:info() print("Compression mark : " .. hex(self.compression_mark)) end
+function HeaderFile:info() print("Compression mark : " .. hex(self.compression_mark)) end
 
 local Level = {}
 Level.__index = Level
-function Level.new(offset0, offset1, offset2, size0, size1, size2, name)
+function Level.new(offset0, offset1, offset2, size0, size1, size2, name, width,
+                   height)
     local self = setmetatable({}, Level)
     self.offset0 = offset0
     self.offset1 = offset1
@@ -42,6 +43,8 @@ function Level.new(offset0, offset1, offset2, size0, size1, size2, name)
     self.size1 = size1
     self.size2 = size2
     self.name = name
+    self.width = width
+    self.height = height
     return self
 end
 
@@ -54,13 +57,15 @@ function LevelFile.new(filename, header, autoread)
     self.filename = filename
     self.header = header
     self.levels = {}
+    self.raw_data = data
     if autoread then self:read() end
     return self
 end
 
 function LevelFile:read()
     local f = io.open(self.filename, "rb")
-    local data = f:read("*all")
+    self.raw_data = f:read("*all")
+    local data = self.raw_data
     for i = 1, 100, 1 do
         local start = self.header.level_offsets[i]; --           8
         if start == 0xFFFFFFFF then break end
@@ -89,17 +94,39 @@ function LevelFile:read()
                                                    1 + start + 38)) -- Char[16] 30-46
         table.insert(self.levels,
                      Level.new(plane0_offset, plane1_offset, plane2_offset,
-                               plane0_size, plane1_size, plane2_size, name))
+                               plane0_size, plane1_size, plane2_size, name,
+                               width, height))
     end
+    f:close()
 end
 function LevelFile:info()
-    for i, v in ipairs(self.levels) do print(i .. "|" .. v.name .. "|") end
+    for i, v in ipairs(self.levels) do
+        print(
+            string.format("%2d", i) .. "|" .. v.name .. " (" .. v.width .. "x" ..
+                v.height .. ")|")
+    end
+end
+function LevelFile:decode(i)
+    local level = self.levels[i]
+    local plane0 = string.sub(self.raw_data, 1 + level.offset0, 1 + level.offset0 + level.size0)
+    local first = string.unpack("<I2", string.sub(plane0, 1, 1 + 2))
+    print(first)
 end
 
-local h = Header.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
+local h = HeaderFile.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
 h:info()
 local lvl = LevelFile.new(
                 "../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1", h)
 lvl:info()
+lvl:decode(1)
 
 -- 0x8 1er niveau
+
+--[[
+RLEW tag indicate a repeated value (the first word in MAPHEAD.WL6, which is 0xABCD)
+Read first 2 bytes of input file. This is the total length in bytes of the decoded data
+While the decoded data length is less than the total length (or while there are bytes to decode):
+    read a word w
+    if the word is the RLEW tag, read two more words w1 and w2, repeat w1 times the word w2 in the output
+    otherwise, write w in the output
+--]]
