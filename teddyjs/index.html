@@ -486,7 +486,7 @@
 					s = "[Starts]            : " + this.planes[0].start + ", " + this.planes[1].start + ", " + this.planes[2].start + "\n" +
 						"[CompressedLengths] : " + this.planes[0].length + ", " + this.planes[1].length + ", " + this.planes[2].length + "\n" +
 						"[ReadLengths]       : " + this.planes[0].content.length + ", " + this.planes[1].content.length + ", " + this.planes[2].content.length + "\n" +
-						"[Sizes]             : " + this.width + "x" + this.length + " (" + (64 * 64) + ")\n" +
+						"[Sizes]             : " + this.width + "x" + this.height + " (" + (this.width * this.height) + ")\n" +
 						"[Name]              : " + this.name;
 				}
 				return s;
@@ -494,6 +494,8 @@
 		}
 
 		class LevelSet {
+			static debug_first = true;
+
 			constructor(data, header) {
 				this.header = header;
 				let dec = new TextDecoder();
@@ -536,7 +538,7 @@
 				level.height = new Uint16Array(data.slice(startLevel + 20, startLevel + 22))[0];
 				let dec = new TextDecoder();
 				level.name = dec.decode(data.slice(startLevel + 22, startLevel + 32));
-				let plane0 = this.rwle_expand(magic, data.slice(startPlane0, startPlane0 + lengthPlane0), true);
+				let plane0 = this.rwle_expand(magic, data.slice(startPlane0, startPlane0 + lengthPlane0));
 				let plane1 = this.rwle_expand(magic, data.slice(startPlane1, startPlane1 + lengthPlane1));
 				let plane2 = this.rwle_expand(magic, data.slice(startPlane2, startPlane2 + lengthPlane2));
 				level.planes.push(new Plane(startPlane0, lengthPlane0, plane0));
@@ -545,7 +547,7 @@
 				return level;
 			}
 
-			rwle_expand(magic, data, debug=false) {
+			rwle_expand(magic, data) {
 				let size = new Uint16Array(data.slice(0, 2))[0];
 				console.log("RWLE EXPAND SIZE = " + size);
 				let expanded = [];
@@ -553,7 +555,7 @@
 				while (i < data.byteLength) {
 					let v = new Uint16Array(data.slice(i, i + 2))[0];
 					// debug info
-					if (debug) {
+					if (LevelSet.debug_first) {
 					    console.log("index", i, "value", v, "is_magic?", v == magic);
 				    }
 					// end debug info
@@ -568,6 +570,7 @@
 						expanded.push(v);
 					}
 				}
+				LevelSet.debug_first = false;
 				return expanded;
 			}
 

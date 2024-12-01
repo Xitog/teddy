@@ -87,7 +87,8 @@ function LevelFile.new(filename, header)
     for i = 1, #self.header.level_offsets, 1 do
         local start = self.header.level_offsets[i]; --           8
         if self.counter ~= start then
-            local diff = string.unpack("c4", string.sub(data, self.counter + 1, start))
+            local diff = string.unpack("c4", string.sub(data, self.counter + 1,
+                                                        start))
             if diff ~= self.ending then
                 print("Error while decoding counter = " .. self.counter ..
                           " and start = " .. start .. " and diff = " .. diff)
@@ -154,10 +155,40 @@ function LevelFile:decode(i)
     local plane0 = string.sub(self.raw_data, 1 + level.offset0,
                               1 + level.offset0 + level.size0)
     local data = {}
-    for index = 1, 64, 2 do
-        local first = string.unpack("<I2", string.sub(plane0, index, index + 2))
-        print("num", index, "offset", hex(level.offset0 + index), "value", hex(first)) -- 8192
+    local decompressed_size = string.unpack("<I2", string.sub(plane0, 1, 2))
+    print("Decompressed size = " .. decompressed_size)
+    if decompressed_size ~= 8192 then
+        print("Wrong decompressed size detected: " .. decompressed_size ..
+                  " != " .. 8192)
+        os.exit()
     end
+    local index = 3
+    while index <= #plane0 - 2 do
+        local value = string.unpack("<I2", string.sub(plane0, index, index + 2))
+        if value == 0xABCD then
+            local next1 = string.unpack("<I2", string.sub(plane0, index + 2,
+                                                          index + 4))
+            local next2 = string.unpack("<I2", string.sub(plane0, index + 4,
+                                                          index + 6))
+            for _ = 1, next1, 1 do table.insert(data, next2) end
+            index = index + 4
+        else
+            table.insert(data, value)
+        end
+        --print("num", index, "offset", hex(level.offset0 + index), "value",
+        --      hex(value), "size", #plane0, "decompressed size", #data,
+        --      "/", decompressed_size)
+        index = index + 2
+    end
+    print("Size of level = " .. #data)
+    local file = io.open("level1plane0.txt", "w")
+    for line=1, 64, 1 do
+        for row=1, 64, 1 do
+            file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
+        end
+        file:write("\n")
+    end
+    file:close()
 end
 
 local h =
@@ -173,9 +204,8 @@ lvl:decode(1)
 
 --[[
 RLEW tag indicate a repeated value (the first word in MAPHEAD.WL6, which is 0xABCD)
-Read first 2 bytes of input file. This is the total length in bytes of the decoded data
+
 While the decoded data length is less than the total length (or while there are bytes to decode):
     read a word w
-    if the word is the RLEW tag, read two more words w1 and w2, repeat w1 times the word w2 in the output
-    otherwise, write w in the output
+
 --]]
