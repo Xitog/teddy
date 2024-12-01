@@ -447,13 +447,11 @@
 					'Created US Time = ' + date.toLocaleString('us-US', { timeZone: 'America/Chicago' }) + "\n" +
 					'Created FR Time = ' + date.toLocaleString('fr-FR', { timeZone: 'Europe/Brussels' }) + "\n" +
 					'File size = ' + size + "\n";
-				s += 'Magic hex = ' + this.magic.toString(16).padStart(4, '0') + '\n';
+				s += `Magic hex = ${hex(this.magic)}\n`;
 				s += `Number of bytes read = ${this.nb_bytes} / ${this.total_nb_bytes}\n`;
 				s += `Number of levels = ${this.ptr.length}\n`;
 				for (let i = 0; i < this.ptr.length; i++) {
-					s += `    - Lvl ${(i + 1).toString().padStart(2, ' ')} start at `;
-					s += this.ptr[i].toString(16).padStart(4, '0') + '(';
-					s += this.ptr[i] + ')\n';
+					s += `    - Lvl ${(i + 1).toString().padStart(2, ' ')} start at ${hex(this.ptr[i])}\n`
 				}
 				return s;
 			}
@@ -538,7 +536,7 @@
 				level.height = new Uint16Array(data.slice(startLevel + 20, startLevel + 22))[0];
 				let dec = new TextDecoder();
 				level.name = dec.decode(data.slice(startLevel + 22, startLevel + 32));
-				let plane0 = this.rwle_expand(magic, data.slice(startPlane0, startPlane0 + lengthPlane0));
+				let plane0 = this.rwle_expand(magic, data.slice(startPlane0, startPlane0 + lengthPlane0), true);
 				let plane1 = this.rwle_expand(magic, data.slice(startPlane1, startPlane1 + lengthPlane1));
 				let plane2 = this.rwle_expand(magic, data.slice(startPlane2, startPlane2 + lengthPlane2));
 				level.planes.push(new Plane(startPlane0, lengthPlane0, plane0));
@@ -547,7 +545,7 @@
 				return level;
 			}
 
-			rwle_expand(magic, data) {
+			rwle_expand(magic, data, debug=false) {
 				let size = new Uint16Array(data.slice(0, 2))[0];
 				console.log("RWLE EXPAND SIZE = " + size);
 				let expanded = [];
@@ -555,7 +553,9 @@
 				while (i < data.byteLength) {
 					let v = new Uint16Array(data.slice(i, i + 2))[0];
 					// debug info
-					console.log("index", i, "value", v, "is_magic?", v == magic);
+					if (debug) {
+					    console.log("index", i, "value", v, "is_magic?", v == magic);
+				    }
 					// end debug info
 					i += 2
 					if (v == magic) {
