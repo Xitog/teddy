@@ -156,7 +156,7 @@ function LevelFile:decode(i)
     local data = {}
     for index = 1, 64, 2 do
         local first = string.unpack("<I2", string.sub(plane0, index, index + 2))
-        print(index, hex(level.offset0 + index), hex(first)) -- 8192
+        print("num", index, "offset", hex(level.offset0 + index), "value", hex(first)) -- 8192
     end
 end
 

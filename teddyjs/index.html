@@ -447,7 +447,7 @@
 					'Created US Time = ' + date.toLocaleString('us-US', { timeZone: 'America/Chicago' }) + "\n" +
 					'Created FR Time = ' + date.toLocaleString('fr-FR', { timeZone: 'Europe/Brussels' }) + "\n" +
 					'File size = ' + size + "\n";
-				s += 'Magix hex = ' + this.magic.toString(16).padStart(4, '0') + '\n';
+				s += 'Magic hex = ' + this.magic.toString(16).padStart(4, '0') + '\n';
 				s += `Number of bytes read = ${this.nb_bytes} / ${this.total_nb_bytes}\n`;
 				s += `Number of levels = ${this.ptr.length}\n`;
 				for (let i = 0; i < this.ptr.length; i++) {
@@ -486,7 +486,7 @@
 				let s = this.name;
 				if (this.planes.length === 3) {
 					s = "[Starts]            : " + this.planes[0].start + ", " + this.planes[1].start + ", " + this.planes[2].start + "\n" +
-						"[CompressedLenghts] : " + this.planes[0].length + ", " + this.planes[1].length + ", " + this.planes[2].length + "\n" +
+						"[CompressedLengths] : " + this.planes[0].length + ", " + this.planes[1].length + ", " + this.planes[2].length + "\n" +
 						"[ReadLengths]       : " + this.planes[0].content.length + ", " + this.planes[1].content.length + ", " + this.planes[2].content.length + "\n" +
 						"[Sizes]             : " + this.width + "x" + this.length + " (" + (64 * 64) + ")\n" +
 						"[Name]              : " + this.name;
@@ -554,6 +554,9 @@
 				let i = 2;
 				while (i < data.byteLength) {
 					let v = new Uint16Array(data.slice(i, i + 2))[0];
+					// debug info
+					console.log("index", i, "value", v, "is_magic?", v == magic);
+					// end debug info
 					i += 2
 					if (v == magic) {
 						let count = new Uint16Array(data.slice(i, i + 2))[0];
