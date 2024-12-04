@@ -1,5 +1,21 @@
+-------------------------------------------------------------------------------
+-- Imports
+-------------------------------------------------------------------------------
+local libpnm = require("libpnm")
+
+-------------------------------------------------------------------------------
+-- Local definitions
+-------------------------------------------------------------------------------
+
 -- run with lua.exe main.lua
 local function hex(data) return string.format("0x%04X", data) end
+
+local function p(t)
+    if t == nil then return "nil" end
+    local s = ""
+    for _, v in ipairs(t) do s = s .. " " .. v end
+    return s
+end
 
 local HeaderFile = {}
 HeaderFile.__index = HeaderFile
@@ -203,30 +219,52 @@ function GraphicFile.new(filename)
     local f = io.open(self.filename, "rb")
     self.size = f:seek("end")
     f:seek("set")
-    local data = f:read("*all")
-    self.total_number_of_chunks = string.unpack("<I2", string.sub(data, 1, 2))
-    self.first_sprite_offset_index =
-        string.unpack("<I2", string.sub(data, 3, 4))
-    self.first_sound_offset_index = string.unpack("<I2", string.sub(data, 5, 6))
+    self.data = f:read("*all")
+    self.total_number_of_chunks = string.unpack("<I2",
+                                                string.sub(self.data, 1, 2))
+    self.first_sprite_offset_index = string.unpack("<I2",
+                                                   string.sub(self.data, 3, 4))
+    self.first_sound_offset_index = string.unpack("<I2",
+                                                  string.sub(self.data, 5, 6))
     self.offsets = {}
     self.sizes = {}
     local start = 7
     for i = 1, self.total_number_of_chunks, 1 do
         local from = start + (i - 1) * 4 -- i=1 then 7
         local to = start + i * 4 - 1 -- i=1 then 10, we read 7, 8, 9, 10 = 4 bytes
-        local address = string.unpack("<I4", string.sub(data, from, to))
+        local address = string.unpack("<I4", string.sub(self.data, from, to))
         table.insert(self.offsets, address)
     end
     start = start + self.total_number_of_chunks * 4
     for i = 1, self.total_number_of_chunks, 1 do
         local from = start + (i - 1) * 2
         local to = start + i * 2
-        local address = string.unpack("<I2", string.sub(data, from, to))
+        local address = string.unpack("<I2", string.sub(self.data, from, to))
         table.insert(self.sizes, address)
     end
     f:close()
     return self
 end
+
+function GraphicFile:extract(num)
+    print("GraphicFile:extract")
+    local start = self.offsets[num] + 1
+    local size = self.sizes[num]
+    local to = start + size
+    local raw = string.sub(self.data, start, to)
+    local data = {}
+    print("from=", start, hex(start), "size=", size, "to=", to, hex(to),
+          "length=", #raw)
+    for i = 1, size, 1 do
+        local v = string.unpack("<I1", string.sub(raw, i, i))
+        table.insert(data, v)
+    end
+    return data
+end
+
+-- alternate ou juste strictement scénario nominal dans diag de sésq
+-- obtenir le diag de classe participante : à partir d'une feuille blanche ? On met les liens de nav ?
+-- ou à partir du diag de classe métier et on surligne en jaune ce qu'on ajoute
 
 function GraphicFile:info()
     print("------------------------------------")
@@ -240,6 +278,7 @@ function GraphicFile:info()
     print("List of chunk offsets = ")
     print("--- START OF WALLS ---")
     for i, v in ipairs(self.offsets) do
+        if i == 10 then break end
         if i == self.first_sprite_offset_index then
             print("--- START OF SPRITES ---")
         elseif i == self.first_sound_offset_index then
@@ -249,84 +288,6 @@ function GraphicFile:info()
               self.sizes[i])
     end
     print("------------------------------------")
-end
-
--------------------------------------------------------------------------------
--- Handling of portable pixmap (portable bitmap file format : pbm)
--------------------------------------------------------------------------------
-
-local PBM = {}
-PBM.__index = PBM
-function PBM.new(width, height)
-    local self = setmetatable({}, PBM)
-    self.classname = 'PBM'
-    self.width = width
-    self.height = height
-    self.size = self.width * self.height
-    self.data = {}
-    for _ = 1, self.width * self.height, 1 do
-        table.insert(self.data, {0, 0, 0})
-    end
-    return self
-end
-
-function PBM:set(x, y, r, g, b)
-    -- print("setting " .. x .. "@" .. y .. "=" .. "{" .. r .. ", " .. g .. ", " .. b .. "}")
-    self.data[x + y * self.width] = {r, g, b}
-end
-
-function PBM:info()
-    print("------------------------------------")
-    print("[PBM File Information]")
-    print("------------------------------------")
-    print("Width = " .. self.width)
-    print("Height = " .. self.height)
-    print("File size = " .. self.size)
-end
-
-function PBM:rect(x, y, w, h, color, fill)
-    for row = y, y + h - 1, 1 do
-        for col = x, x + w - 1, 1 do
-            if fill or
-                ((row == y or row == y + h) and (col == x or col == x + w)) then
-                self.data[(row - 1) * self.width + col] = color
-            end
-        end
-    end
-end
-
-function PBM:randomize()
-    math.randomseed(os.time())
-    self.data = {}
-    for _ = 1, self.width * self.height, 1 do
-        local r = math.random(255)
-        local g = math.random(255)
-        local b = math.random(255)
-        table.insert(self.data, {r, g, b})
-    end
-end
-
-function PBM:save(filename)
-    local file = io.open(filename, "w")
-    file:write("P3\n");
-    file:write("# ASCII PPM file\n")
-    file:write(self.width .. " " .. self.height .. "\n")
-    file:write("255\n\n")
-    for row = 1, self.height, 1 do
-        for col = 1, self.width, 1 do
-            local data = self.data[(row - 1) * self.width + col]
-            if data == nil then
-                print("Error at col=" .. col .. " row=" .. row)
-                os.exit()
-            end
-            local r = data[1]
-            local g = data[2]
-            local b = data[3]
-            file:write(r .. " " .. g .. " " .. b .. "\n")
-        end
-        file:write("\n")
-    end
-    file:close()
 end
 
 -------------------------------------------------------------------------------
@@ -356,13 +317,13 @@ function PaletteFile.new(filename)
         g = g * 4
         b = b * 4
         table.insert(self.colors, {r, g, b})
-        -- print(i, r .. "@" .. hex(start + (i-1)*3), g .. "@" .. hex(start + (i-1)*3 + 1), b .. "@" .. hex(start + (i-1)*3 + 2))
     end
     return self
 end
 
 function PaletteFile:get_color(i)
-    print(self.colors[i][1], self.colors[i][2], self.colors[i][3])
+    -- print(self.colors[i][1], self.colors[i][2], self.colors[i][3])
+    return self.colors[i]
 end
 
 function PaletteFile:save(filename)
@@ -378,11 +339,11 @@ function PaletteFile:save(filename)
 end
 
 function PaletteFile:ppm(filename)
-    local pbm = PBM.new(160, 160)
+    local img = libpnm.PBM.new(160, 160)
     local row = 1
     local col = 1
     for i = 1, 256, 1 do
-        pbm:rect((col - 1) * 10 + 1, (row - 1) * 10 + 1, 10, 10, self.colors[i],
+        img:rect((col - 1) * 10 + 1, (row - 1) * 10 + 1, 10, 10, self.colors[i],
                  true)
         col = col + 1
         if col == 17 then
@@ -390,7 +351,7 @@ function PaletteFile:ppm(filename)
             row = row + 1
         end
     end
-    pbm:save(filename)
+    img:save(filename)
 end
 
 -------------------------------------------------------------------------------
@@ -413,26 +374,40 @@ graph:info()
 local palette = PaletteFile.new(
                     "../data/Wolfenstein 3D/Shareware maps/1.0/GAMEPAL.OBJ")
 palette:save("palette.txt")
-palette:ppm("palette.ppm")
+-- palette:ppm("palette.ppm")
 
-for i=17, 20, 1 do
-    palette:get_color(i)
+for i = 17, 20, 1 do palette:get_color(i) end
+
+local img = libpnm.PBM.new(10, 10)
+img:info()
+img:rect(1, 6, 10, 5, {255, 0, 0}, true)
+-- img:save("test.ppm")
+
+-- On obtient les données raw du mur n°1
+local raw = graph:extract(1)
+print("Size of raw = ", #raw)
+-- On le traduit grâce à la palette
+local image = {}
+for _, v in ipairs(raw) do
+    -- print("reading raw at :", v+1)
+    table.insert(image, palette:get_color(v + 1))
 end
+-- Verifie les 10 premiers
+for i = 1, 10, 1 do print("img apres palette @" .. i .. " = " .. p(image[i])) end
 
-local pbm = PBM.new(10, 10)
-pbm:info()
-pbm:rect(1, 6, 10, 5, {255, 0, 0}, true)
-pbm:save("test.ppm")
--- pbm:save("pipo2.ppm")
--- pbm:randomize()
--- pbm:save("pipo.ppm")
+-- On produit le PPM
+local texture = libpnm.PBM.new(64, 64)
+local x = 1
+local y = 1
+for _, v in ipairs(image) do
+    texture:set(x, y, v)
+    y = y + 1
+    if y == 65 then
+        x = x + 1
+        y = 1
+    end
+end
+texture:info()
+-- texture:save("wall1.ppm")
 
 -- 0x8 1er niveau
-
---[[
-RLEW tag indicate a repeated value (the first word in MAPHEAD.WL6, which is 0xABCD)
-
-While the decoded data length is less than the total length (or while there are bytes to decode):
-    read a word w
-
---]]
