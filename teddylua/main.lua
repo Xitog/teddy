@@ -384,30 +384,35 @@ img:rect(1, 6, 10, 5, {255, 0, 0}, true)
 -- img:save("test.ppm")
 
 -- On obtient les données raw du mur n°1
-local raw = graph:extract(1)
-print("Size of raw = ", #raw)
--- On le traduit grâce à la palette
-local image = {}
-for _, v in ipairs(raw) do
-    -- print("reading raw at :", v+1)
-    table.insert(image, palette:get_color(v + 1))
-end
--- Verifie les 10 premiers
-for i = 1, 10, 1 do print("img apres palette @" .. i .. " = " .. p(image[i])) end
-
--- On produit le PPM
-local texture = libpnm.PBM.new(64, 64)
-local x = 1
-local y = 1
-for _, v in ipairs(image) do
-    texture:set(x, y, v)
-    y = y + 1
-    if y == 65 then
-        x = x + 1
-        y = 1
+local function to_ppm(num)
+    local raw = graph:extract(num)
+    print("Size of raw = ", #raw)
+    -- On le traduit grâce à la palette
+    local image = {}
+    for _, v in ipairs(raw) do
+        -- print("reading raw at :", v+1)
+        table.insert(image, palette:get_color(v + 1))
     end
+    -- Verifie les 10 premiers
+    -- for i = 1, 10, 1 do print("img apres palette @" .. i .. " = " .. p(image[i])) end
+    -- On produit le PPM
+    local texture = libpnm.PBM.new(64, 64)
+    local x = 1
+    local y = 1
+    for _, v in ipairs(image) do
+        texture:set(x, y, v)
+        y = y + 1
+        if y == 65 then
+            x = x + 1
+            y = 1
+        end
+    end
+    texture:info()
+    texture:save("tex" .. num .. ".ppm")
 end
-texture:info()
--- texture:save("wall1.ppm")
+
+for i=1, 20, 1 do
+    to_ppm(i)
+end
 
 -- 0x8 1er niveau
