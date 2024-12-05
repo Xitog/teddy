@@ -167,7 +167,7 @@ function LevelFile:info()
     end
     print("Ending = " .. self.ending)
 end
-function LevelFile:decode(i)
+function LevelFile:extract_to_binary(i)
     local level = self.levels[i]
     local plane0 = string.sub(self.raw_data, 1 + level.offset0,
                               1 + level.offset0 + level.size0)
@@ -198,16 +198,7 @@ function LevelFile:decode(i)
         index = index + 2
     end
     print("Size of level = " .. #data)
-    --[[
-    local file = io.open("level1plane0.txt", "w")
-    for line=1, 64, 1 do
-        for row=1, 64, 1 do
-            file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
-        end
-        file:write("\n")
-    end
-    file:close()
-    --]]
+    return data
 end
 
 local GraphicFile = {}
@@ -223,9 +214,9 @@ function GraphicFile.new(filename)
     self.total_number_of_chunks = string.unpack("<I2",
                                                 string.sub(self.data, 1, 2))
     self.first_sprite_offset_index = string.unpack("<I2",
-                                                   string.sub(self.data, 3, 4))
+                                                   string.sub(self.data, 3, 4)) + 1
     self.first_sound_offset_index = string.unpack("<I2",
-                                                  string.sub(self.data, 5, 6))
+                                                  string.sub(self.data, 5, 6)) + 1
     self.offsets = {}
     self.sizes = {}
     local start = 7
@@ -246,20 +237,54 @@ function GraphicFile.new(filename)
     return self
 end
 
-function GraphicFile:extract(num)
-    print("GraphicFile:extract")
+function GraphicFile:nb_walls()
+    return self.first_sprite_offset_index - 1
+end
+
+function GraphicFile:exist(num)
+    return self.offsets[num] ~= 0 and self.sizes[num] ~= 0
+end
+
+function GraphicFile:extract_to_binary(num)
+    if not self:exist(num) then
+        return nil
+    end
     local start = self.offsets[num] + 1
     local size = self.sizes[num]
     local to = start + size
     local raw = string.sub(self.data, start, to)
     local data = {}
-    print("from=", start, hex(start), "size=", size, "to=", to, hex(to),
-          "length=", #raw)
     for i = 1, size, 1 do
         local v = string.unpack("<I1", string.sub(raw, i, i))
         table.insert(data, v)
     end
     return data
+end
+
+function GraphicFile:extract_to_ppm(num, palette)
+    local raw = self:extract_to_binary(num)
+    if raw == nil then
+        return
+    end
+    -- On le traduit grâce à la palette
+    local image = {}
+    for _, v in ipairs(raw) do
+        -- print("reading raw at :", v+1)
+        table.insert(image, palette:get_color(v + 1))
+    end
+    -- On produit le PPM
+    local texture = libpnm.PBM.new(64, 64)
+    local x = 1
+    local y = 1
+    for _, v in ipairs(image) do
+        texture:set(x, y, v)
+        y = y + 1
+        if y == 65 then
+            x = x + 1
+            y = 1
+        end
+    end
+    return texture
 end
 
 -- alternate ou juste strictement scénario nominal dans diag de sésq
@@ -278,7 +303,7 @@ function GraphicFile:info()
     print("List of chunk offsets = ")
     print("--- START OF WALLS ---")
     for i, v in ipairs(self.offsets) do
-        if i == 10 then break end
+        --if i == 10 then break end
         if i == self.first_sprite_offset_index then
             print("--- START OF SPRITES ---")
         elseif i == self.first_sound_offset_index then
@@ -365,7 +390,6 @@ print()
 local lvl = LevelFile.new(
                 "../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1", h)
 lvl:info()
-lvl:decode(1)
 
 local graph = GraphicFile.new(
                   "../data/Wolfenstein 3D/Shareware maps/1.0/VSWAP.WL1")
@@ -383,36 +407,59 @@ img:info()
 img:rect(1, 6, 10, 5, {255, 0, 0}, true)
 -- img:save("test.ppm")
 
--- On obtient les données raw du mur n°1
-local function to_ppm(num)
-    local raw = graph:extract(num)
-    print("Size of raw = ", #raw)
-    -- On le traduit grâce à la palette
-    local image = {}
-    for _, v in ipairs(raw) do
-        -- print("reading raw at :", v+1)
-        table.insert(image, palette:get_color(v + 1))
+for i=1, graph:nb_walls(), 1 do
+    img = graph:extract_to_ppm(i, palette)
+    if img ~= nil then
+        img:save("walls" .. "\\" .. "tex" .. i .. ".ppm")
     end
-    -- Verifie les 10 premiers
-    -- for i = 1, 10, 1 do print("img apres palette @" .. i .. " = " .. p(image[i])) end
-    -- On produit le PPM
-    local texture = libpnm.PBM.new(64, 64)
-    local x = 1
-    local y = 1
-    for _, v in ipairs(image) do
-        texture:set(x, y, v)
-        y = y + 1
-        if y == 65 then
-            x = x + 1
-            y = 1
-        end
-    end
-    texture:info()
-    texture:save("tex" .. num .. ".ppm")
 end
 
-for i=1, 20, 1 do
-    to_ppm(i)
+local data = lvl:extract_to_binary(1)
+
+--[[
+local file = io.open("level1plane0.txt", "w")
+for line=1, 64, 1 do
+    for row=1, 64, 1 do
+        file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
+    end
+    file:write("\n")
 end
+file:close()
+--]]
+
+local width = 32
+local height = 32
+local megatexture = libpnm.PBM.new(width*64, height*64)
+for line=1, height, 1 do
+    for col=1, width, 1 do
+        local raw_num = data[(line-1)*64 + col]
+        local num = raw_num * 2 - 1
+        if raw_num <= 64 then
+            local raw = graph:extract_to_binary(num)
+            -- On le traduit grâce à la palette
+            local image = {}
+            for _, v in ipairs(raw) do
+                -- print("reading raw at :", v+1)
+                table.insert(image, palette:get_color(v + 1))
+            end
+            local x = 1
+            local y = 1
+            for _, v in ipairs(image) do
+                megatexture:set((col - 1) * 64 + x, (line - 1) * 64 + y, v)
+                y = y + 1
+                if y == 65 then
+                    x = x + 1
+                    y = 1
+                end
+            end
+        elseif raw_num >= 106 + 1 and raw_num <= 143 + 1 then
+            megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {112, 112, 112}, true)
+            megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {224, 224, 224}, false)
+        else
+            print(raw_num)
+        end
+    end
+end
+megatexture:save("E1M01.ppm")
 
 -- 0x8 1er niveau

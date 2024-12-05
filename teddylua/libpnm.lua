@@ -68,7 +68,7 @@ function PBM:rect(x, y, w, h, color, fill)
     for row = y, y + h - 1, 1 do
         for col = x, x + w - 1, 1 do
             if fill or
-                ((row == y or row == y + h) and (col == x or col == x + w)) then
+                ((row == y or row == y + h - 1) or (col == x or col == x + w - 1)) then
                 self.data[(row - 1) * self.width + col] = color
             end
         end
