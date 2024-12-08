@@ -167,6 +167,7 @@ function LevelFile:info()
     end
     print("Ending = " .. self.ending)
 end
+
 function LevelFile:extract_to_binary(i)
     local level = self.levels[i]
     local plane0 = string.sub(self.raw_data, 1 + level.offset0,
@@ -199,6 +200,62 @@ function LevelFile:extract_to_binary(i)
     end
     print("Size of level = " .. #data)
     return data
+end
+
+function LevelFile:extract_to_text(i)
+    local data = self:extract_to_binary(1)
+    local file = io.open("level" .. i .. "plane0.txt", "w")
+    for line=1, 64, 1 do
+        for row=1, 64, 1 do
+            file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
+        end
+        file:write("\n")
+    end
+    file:close()
+end
+
+function LevelFile:extract_to_ppm(i, graph, palette, format)
+    local data = self:extract_to_binary(1)
+    local size = 64
+    local width = size
+    local height = size
+    local megatexture = libpnm.PBM.new(width*64, height*64)
+    for line=1, height, 1 do
+        for col=1, width, 1 do
+            local raw_num = data[(line-1)*64 + col]
+            local num = raw_num * 2 - 1
+            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or raw_num == 100 then
+                if raw_num == 90 or raw_num == 91 then
+                    num = 57
+                elseif raw_num == 100 then
+                    num = 61
+                end
+                local raw = graph:extract_to_binary(num)
+                -- On le traduit grâce à la palette
+                local image = {}
+                for _, v in ipairs(raw) do
+                    -- print("reading raw at :", v+1)
+                    table.insert(image, palette:get_color(v + 1))
+                end
+                local x = 1
+                local y = 1
+                for _, v in ipairs(image) do
+                    megatexture:set((col - 1) * 64 + x, (line - 1) * 64 + y, v)
+                    y = y + 1
+                    if y == 65 then
+                        x = x + 1
+                        y = 1
+                    end
+                end
+            elseif raw_num >= 106 and raw_num <= 143 then
+                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {112, 112, 112}, true)
+                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {224, 224, 224}, false)
+            else
+                print(raw_num)
+            end
+        end
+    end
+    megatexture:save("E1M0" .. i .. ".ppm", format)
 end
 
 local GraphicFile = {}
@@ -363,7 +420,7 @@ function PaletteFile:save(filename)
     file:close()
 end
 
-function PaletteFile:ppm(filename)
+function PaletteFile:ppm(filename, format)
     local img = libpnm.PBM.new(160, 160)
     local row = 1
     local col = 1
@@ -376,7 +433,10 @@ function PaletteFile:ppm(filename)
             row = row + 1
         end
     end
-    img:save(filename)
+    if format == nil then
+        format = "ascii"
+    end
+    img:save(filename, format)
 end
 
 -------------------------------------------------------------------------------
@@ -405,61 +465,15 @@ for i = 17, 20, 1 do palette:get_color(i) end
 local img = libpnm.PBM.new(10, 10)
 img:info()
 img:rect(1, 6, 10, 5, {255, 0, 0}, true)
--- img:save("test.ppm")
+-- img:save("test.ppm", "ascii")
 
 for i=1, graph:nb_walls(), 1 do
     img = graph:extract_to_ppm(i, palette)
     if img ~= nil then
-        img:save("walls" .. "\\" .. "tex" .. i .. ".ppm")
+        --img:save("walls" .. "\\" .. "tex" .. i .. ".ppm", "ascii")
     end
 end
 
-local data = lvl:extract_to_binary(1)
-
---[[
-local file = io.open("level1plane0.txt", "w")
-for line=1, 64, 1 do
-    for row=1, 64, 1 do
-        file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
-    end
-    file:write("\n")
-end
-file:close()
---]]
-
-local width = 32
-local height = 32
-local megatexture = libpnm.PBM.new(width*64, height*64)
-for line=1, height, 1 do
-    for col=1, width, 1 do
-        local raw_num = data[(line-1)*64 + col]
-        local num = raw_num * 2 - 1
-        if raw_num <= 64 then
-            local raw = graph:extract_to_binary(num)
-            -- On le traduit grâce à la palette
-            local image = {}
-            for _, v in ipairs(raw) do
-                -- print("reading raw at :", v+1)
-                table.insert(image, palette:get_color(v + 1))
-            end
-            local x = 1
-            local y = 1
-            for _, v in ipairs(image) do
-                megatexture:set((col - 1) * 64 + x, (line - 1) * 64 + y, v)
-                y = y + 1
-                if y == 65 then
-                    x = x + 1
-                    y = 1
-                end
-            end
-        elseif raw_num >= 106 + 1 and raw_num <= 143 + 1 then
-            megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {112, 112, 112}, true)
-            megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {224, 224, 224}, false)
-        else
-            print(raw_num)
-        end
-    end
-end
-megatexture:save("E1M01.ppm")
+lvl:extract_to_ppm(1, graph, palette, "binary")
 
 -- 0x8 1er niveau

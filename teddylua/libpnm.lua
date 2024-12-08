@@ -86,12 +86,23 @@ function PBM:randomize()
     end
 end
 
-function PBM:save(filename)
+function PBM:save(filename, format)
     local file = io.open(filename, "w")
-    file:write("P3\n");
-    file:write("# ASCII PPM file\n")
+    if format == "ascii" then
+        file:write("P3\n");
+        file:write("# ASCII PPM file\n")
+    elseif format == "binary" then
+        file:write("P6\n");
+        file:write("# Binary PPM file\n")
+    else
+        error("Unknow format : ", format)
+    end
     file:write(self.width .. " " .. self.height .. "\n")
-    file:write("255\n\n")
+    file:write("255\n")
+    if format == "binary" then
+        file:close()
+        file = io.open(filename, "a+b")
+    end
     for row = 1, self.height, 1 do
         for col = 1, self.width, 1 do
             local data = self.data[(row - 1) * self.width + col]
@@ -102,13 +113,35 @@ function PBM:save(filename)
             local r = data[1]
             local g = data[2]
             local b = data[3]
-            file:write(r .. " " .. g .. " " .. b .. "\n")
+            if format == "ascii" then
+                file:write(r .. " " .. g .. " " .. b .. "\n")
+            else
+                local s = string.pack('B', g) .. string.pack('B', b) .. string.pack('B', r)
+                file:write(s)
+            end
         end
-        file:write("\n")
+        if format == "ascii" then
+            file:write("\n")
+        end
     end
     file:close()
 end
 
+local function tests()
+    local size = 4 --64
+    local mid = math.floor(size / 2)
+    local img = PBM.new(size, size)
+    img:rect(1, 1, mid, mid, {255, 0, 0}, true)
+    img:rect(mid + 1, 1, mid, mid, {255, 255, 255}, true)
+    img:rect(1, mid + 1, mid, mid, {255, 255, 255}, true)
+    img:rect(mid + 1, mid + 1, mid, mid, {255, 0, 0}, true)
+    img:save("test_libpnm_1b.ppm", "binary")
+    img:save("test_libpnm_1a.ppm", "ascii")
+end
+
 libpnm["PBM"] = PBM
+libpnm["tests"] = tests
+
+-- tests()
 
 return libpnm
