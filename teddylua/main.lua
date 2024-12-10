@@ -168,12 +168,23 @@ function LevelFile:info()
     print("Ending = " .. self.ending)
 end
 
-function LevelFile:extract_to_binary(i)
-    local level = self.levels[i]
-    local plane0 = string.sub(self.raw_data, 1 + level.offset0,
-                              1 + level.offset0 + level.size0)
+function LevelFile:extract_to_binary(ilevel, iplane)
+    local level = self.levels[ilevel]
+    local offset = nil
+    local size = nil
+    if iplane == 0 then
+        offset = level.offset0
+        size = level.size0
+    elseif iplane == 1 then
+        offset = level.offset1
+        size = level.size1
+    else
+        error("iplane must be 0 or 1")
+    end
+    local plane = string.sub(self.raw_data, 1 + offset,
+                              1 + offset + size)
     local data = {}
-    local decompressed_size = string.unpack("<I2", string.sub(plane0, 1, 2))
+    local decompressed_size = string.unpack("<I2", string.sub(plane, 1, 2))
     print("Decompressed size = " .. decompressed_size)
     if decompressed_size ~= 8192 then
         print("Wrong decompressed size detected: " .. decompressed_size ..
@@ -181,12 +192,12 @@ function LevelFile:extract_to_binary(i)
         os.exit()
     end
     local index = 3
-    while index <= #plane0 - 2 do
-        local value = string.unpack("<I2", string.sub(plane0, index, index + 2))
+    while index <= #plane - 2 do
+        local value = string.unpack("<I2", string.sub(plane, index, index + 2))
         if value == 0xABCD then
-            local next1 = string.unpack("<I2", string.sub(plane0, index + 2,
+            local next1 = string.unpack("<I2", string.sub(plane, index + 2,
                                                           index + 4))
-            local next2 = string.unpack("<I2", string.sub(plane0, index + 4,
+            local next2 = string.unpack("<I2", string.sub(plane, index + 4,
                                                           index + 6))
             for _ = 1, next1, 1 do table.insert(data, next2) end
             index = index + 4
@@ -202,9 +213,9 @@ function LevelFile:extract_to_binary(i)
     return data
 end
 
-function LevelFile:extract_to_text(i)
-    local data = self:extract_to_binary(1)
-    local file = io.open("level" .. i .. "plane0.txt", "w")
+function LevelFile:extract_to_text(ilevel, iplane)
+    local data = self:extract_to_binary(ilevel, iplane)
+    local file = io.open("level" .. ilevel .. "plane" .. iplane .. ".txt", "w")
     for line=1, 64, 1 do
         for row=1, 64, 1 do
             file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
@@ -215,7 +226,7 @@ function LevelFile:extract_to_text(i)
 end
 
 function LevelFile:extract_to_ppm(i, graph, palette, format)
-    local data = self:extract_to_binary(1)
+    local data = self:extract_to_binary(i)
     local size = 64
     local width = size
     local height = size
@@ -224,9 +235,12 @@ function LevelFile:extract_to_ppm(i, graph, palette, format)
         for col=1, width, 1 do
             local raw_num = data[(line-1)*64 + col]
             local num = raw_num * 2 - 1
-            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or raw_num == 100 then
+            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or
+               raw_num == 92 or raw_num == 93 or raw_num == 100 then
                 if raw_num == 90 or raw_num == 91 then
                     num = 57
+                elseif raw_num == 92 or raw_num == 93 then
+                    num = 63
                 elseif raw_num == 100 then
                     num = 61
                 end
@@ -457,23 +471,26 @@ graph:info()
 
 local palette = PaletteFile.new(
                     "../data/Wolfenstein 3D/Shareware maps/1.0/GAMEPAL.OBJ")
-palette:save("palette.txt")
--- palette:ppm("palette.ppm")
+--palette:save("palette.txt")
+--palette:ppm("palette.ppm")
 
-for i = 17, 20, 1 do palette:get_color(i) end
+--for i = 17, 20, 1 do palette:get_color(i) end
 
-local img = libpnm.PBM.new(10, 10)
-img:info()
-img:rect(1, 6, 10, 5, {255, 0, 0}, true)
--- img:save("test.ppm", "ascii")
-
-for i=1, graph:nb_walls(), 1 do
-    img = graph:extract_to_ppm(i, palette)
-    if img ~= nil then
-        --img:save("walls" .. "\\" .. "tex" .. i .. ".ppm", "ascii")
+local function extract_walls()
+    for i=1, graph:nb_walls(), 1 do
+        local img = graph:extract_to_ppm(i, palette)
+        if img ~= nil then
+            img:save("walls" .. "\\" .. "tex" .. i .. ".ppm", "ascii")
+        end
     end
 end
 
-lvl:extract_to_ppm(1, graph, palette, "binary")
+-- 54s
+local start_time = os.clock()
+-- lvl:extract_to_ppm(3, graph, palette, "binary") 54.85
+print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
 
--- 0x8 1er niveau
+-- 0s
+start_time = os.clock()
+lvl:extract_to_text(1, 1) -- level 1 plane 1
+print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
