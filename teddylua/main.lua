@@ -17,6 +17,53 @@ local function p(t)
     return s
 end
 
+local function dump(t, keys)
+    if keys == nil then
+        for k, v in pairs(t) do
+            print(k, v)
+        end
+    else
+        for _, k in ipairs(keys) do
+            print(k, t[k])
+        end
+    end
+end
+
+local function copy_table(source)
+    local dest = {}
+    for k, v in pairs(source) do
+        dest[k] = v
+    end
+    return dest
+end
+
+local function get_keys_sorted_by_values(tbl)
+    local count = 0
+    for _, _ in pairs(tbl) do
+        count = count + 1
+    end
+    local function get_max(tbl2)
+        local max = 0
+        local max_key = nil
+        for k, v in pairs(tbl2) do
+            if v > max then
+                max = v
+                max_key = k
+            end
+        end
+        return max_key
+    end
+    local sorted_keys = {}
+    local base = copy_table(tbl)
+    while count > 0 do
+        local k = get_max(base)
+        table.insert(sorted_keys, k)
+        base[k] = nil
+        count = count - 1
+    end
+    return sorted_keys
+end
+
 local HeaderFile = {}
 HeaderFile.__index = HeaderFile
 function HeaderFile.new(filename)
@@ -213,6 +260,24 @@ function LevelFile:extract_to_binary(ilevel, iplane)
     return data
 end
 
+function LevelFile:count_values(ilevel, iplane)
+    local data = self:extract_to_binary(ilevel, iplane)
+    local values = {}
+    local count = 0
+    for line=1, 64, 1 do
+        for row=1, 64, 1 do
+            local v = data[(line-1)*64 + row]
+            if values[v] == nil then
+                values[v] = 1
+                count = count + 1
+            else
+                values[v] = values[v] + 1
+            end
+        end
+    end
+    return values
+end
+
 function LevelFile:extract_to_text(ilevel, iplane)
     local data = self:extract_to_binary(ilevel, iplane)
     local file = io.open("level" .. ilevel .. "plane" .. iplane .. ".txt", "w")
@@ -380,8 +445,8 @@ function GraphicFile:info()
         elseif i == self.first_sound_offset_index then
             print("--- START OF SOUNDS ---")
         end
-        print("    ", i, "offset=", hex(v), string.format("%05d", v), "size=",
-              self.sizes[i])
+        --print("    ", i, "offset=", hex(v), string.format("%05d", v), "size=",
+        --      self.sizes[i])
     end
     print("------------------------------------")
 end
@@ -492,5 +557,18 @@ print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
 
 -- 0s
 start_time = os.clock()
-lvl:extract_to_text(1, 1) -- level 1 plane 1
+--lvl:extract_to_text(1, 1) -- level 1 plane 1
 print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
+
+local values = lvl:count_values(1, 1)
+print("Values of level 1 plane 1:")
+dump(values, get_keys_sorted_by_values(values))
+
+print("Tests:")
+local test_tbl = {
+    [103] = 15,
+    [2] = 22,
+    [59] = 17
+}
+local keys = get_keys_sorted_by_values(test_tbl)
+dump(test_tbl, keys)
