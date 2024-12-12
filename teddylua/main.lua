@@ -2,6 +2,7 @@
 -- Imports
 -------------------------------------------------------------------------------
 local libpnm = require("libpnm")
+local liblua = require("liblua")
 
 -------------------------------------------------------------------------------
 -- Local definitions
@@ -15,53 +16,6 @@ local function p(t)
     local s = ""
     for _, v in ipairs(t) do s = s .. " " .. v end
     return s
-end
-
-local function dump(t, keys)
-    if keys == nil then
-        for k, v in pairs(t) do
-            print(k, v)
-        end
-    else
-        for _, k in ipairs(keys) do
-            print(k, t[k])
-        end
-    end
-end
-
-local function copy_table(source)
-    local dest = {}
-    for k, v in pairs(source) do
-        dest[k] = v
-    end
-    return dest
-end
-
-local function get_keys_sorted_by_values(tbl)
-    local count = 0
-    for _, _ in pairs(tbl) do
-        count = count + 1
-    end
-    local function get_max(tbl2)
-        local max = 0
-        local max_key = nil
-        for k, v in pairs(tbl2) do
-            if v > max then
-                max = v
-                max_key = k
-            end
-        end
-        return max_key
-    end
-    local sorted_keys = {}
-    local base = copy_table(tbl)
-    while count > 0 do
-        local k = get_max(base)
-        table.insert(sorted_keys, k)
-        base[k] = nil
-        count = count - 1
-    end
-    return sorted_keys
 end
 
 local HeaderFile = {}
@@ -228,8 +182,7 @@ function LevelFile:extract_to_binary(ilevel, iplane)
     else
         error("iplane must be 0 or 1")
     end
-    local plane = string.sub(self.raw_data, 1 + offset,
-                              1 + offset + size)
+    local plane = string.sub(self.raw_data, 1 + offset, 1 + offset + size)
     local data = {}
     local decompressed_size = string.unpack("<I2", string.sub(plane, 1, 2))
     print("Decompressed size = " .. decompressed_size)
@@ -242,10 +195,10 @@ function LevelFile:extract_to_binary(ilevel, iplane)
     while index <= #plane - 2 do
         local value = string.unpack("<I2", string.sub(plane, index, index + 2))
         if value == 0xABCD then
-            local next1 = string.unpack("<I2", string.sub(plane, index + 2,
-                                                          index + 4))
-            local next2 = string.unpack("<I2", string.sub(plane, index + 4,
-                                                          index + 6))
+            local next1 = string.unpack("<I2",
+                                        string.sub(plane, index + 2, index + 4))
+            local next2 = string.unpack("<I2",
+                                        string.sub(plane, index + 4, index + 6))
             for _ = 1, next1, 1 do table.insert(data, next2) end
             index = index + 4
         else
@@ -264,9 +217,9 @@ function LevelFile:count_values(ilevel, iplane)
     local data = self:extract_to_binary(ilevel, iplane)
     local values = {}
     local count = 0
-    for line=1, 64, 1 do
-        for row=1, 64, 1 do
-            local v = data[(line-1)*64 + row]
+    for line = 1, 64, 1 do
+        for row = 1, 64, 1 do
+            local v = data[(line - 1) * 64 + row]
             if values[v] == nil then
                 values[v] = 1
                 count = count + 1
@@ -281,9 +234,9 @@ end
 function LevelFile:extract_to_text(ilevel, iplane)
     local data = self:extract_to_binary(ilevel, iplane)
     local file = io.open("level" .. ilevel .. "plane" .. iplane .. ".txt", "w")
-    for line=1, 64, 1 do
-        for row=1, 64, 1 do
-            file:write(string.format("%3d", data[(line-1)*64 + row]) .. " ")
+    for line = 1, 64, 1 do
+        for row = 1, 64, 1 do
+            file:write(string.format("%3d", data[(line - 1) * 64 + row]) .. " ")
         end
         file:write("\n")
     end
@@ -295,13 +248,13 @@ function LevelFile:extract_to_ppm(i, graph, palette, format)
     local size = 64
     local width = size
     local height = size
-    local megatexture = libpnm.PBM.new(width*64, height*64)
-    for line=1, height, 1 do
-        for col=1, width, 1 do
-            local raw_num = data[(line-1)*64 + col]
+    local megatexture = libpnm.PBM.new(width * 64, height * 64)
+    for line = 1, height, 1 do
+        for col = 1, width, 1 do
+            local raw_num = data[(line - 1) * 64 + col]
             local num = raw_num * 2 - 1
-            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or
-               raw_num == 92 or raw_num == 93 or raw_num == 100 then
+            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or raw_num == 92 or
+                raw_num == 93 or raw_num == 100 then
                 if raw_num == 90 or raw_num == 91 then
                     num = 57
                 elseif raw_num == 92 or raw_num == 93 then
@@ -327,8 +280,10 @@ function LevelFile:extract_to_ppm(i, graph, palette, format)
                     end
                 end
             elseif raw_num >= 106 and raw_num <= 143 then
-                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {112, 112, 112}, true)
-                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64, {224, 224, 224}, false)
+                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64,
+                                 {112, 112, 112}, true)
+                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64,
+                                 {224, 224, 224}, false)
             else
                 print(raw_num)
             end
@@ -350,9 +305,11 @@ function GraphicFile.new(filename)
     self.total_number_of_chunks = string.unpack("<I2",
                                                 string.sub(self.data, 1, 2))
     self.first_sprite_offset_index = string.unpack("<I2",
-                                                   string.sub(self.data, 3, 4)) + 1
+                                                   string.sub(self.data, 3, 4)) +
+                                         1
     self.first_sound_offset_index = string.unpack("<I2",
-                                                  string.sub(self.data, 5, 6)) + 1
+                                                  string.sub(self.data, 5, 6)) +
+                                        1
     self.offsets = {}
     self.sizes = {}
     local start = 7
@@ -373,25 +330,24 @@ function GraphicFile.new(filename)
     return self
 end
 
-function GraphicFile:nb_walls()
-    return self.first_sprite_offset_index - 1
-end
+function GraphicFile:nb_walls() return self.first_sprite_offset_index - 1 end
 
 function GraphicFile:exist(num)
     return self.offsets[num] ~= 0 and self.sizes[num] ~= 0
 end
 
-function GraphicFile:extract_to_binary(num)
-    if not self:exist(num) then
-        return nil
-    end
+function GraphicFile:extract_to_binary(num, raw)
+    if not self:exist(num) then return nil end
     local start = self.offsets[num] + 1
     local size = self.sizes[num]
     local to = start + size
-    local raw = string.sub(self.data, start, to)
+    local raw_data = string.sub(self.data, start, to)
+    if raw ~= nil and type(raw) == "boolean" and raw then
+        return raw_data
+    end
     local data = {}
     for i = 1, size, 1 do
-        local v = string.unpack("<I1", string.sub(raw, i, i))
+        local v = string.unpack("<I1", string.sub(raw_data, i, i))
         table.insert(data, v)
     end
     return data
@@ -399,9 +355,7 @@ end
 
 function GraphicFile:extract_to_ppm(num, palette)
     local raw = self:extract_to_binary(num)
-    if raw == nil then
-        return
-    end
+    if raw == nil then return end
     -- On le traduit grâce à la palette
     local image = {}
     for _, v in ipairs(raw) do
@@ -427,7 +381,16 @@ end
 -- obtenir le diag de classe participante : à partir d'une feuille blanche ? On met les liens de nav ?
 -- ou à partir du diag de classe métier et on surligne en jaune ce qu'on ajoute
 
-function GraphicFile:info()
+function GraphicFile:info(index)
+    local display_everything = false
+    if index ~= nil and type(index) == "number" then
+        local v = self.offsets[index]
+        print("    ", index, "offset=", hex(v), string.format("%05d", v),
+              "size=", self.sizes[index])
+        return
+    elseif index ~= nil and type(index) == "boolean" then
+        display_everything = index
+    end
     print("------------------------------------")
     print("[Graphic File Information]")
     print("------------------------------------")
@@ -437,16 +400,18 @@ function GraphicFile:info()
     print("First sprite offset index = " .. self.first_sprite_offset_index)
     print("First sound offset index = " .. self.first_sound_offset_index)
     print("List of chunk offsets = ")
-    print("--- START OF WALLS ---")
-    for i, v in ipairs(self.offsets) do
-        --if i == 10 then break end
-        if i == self.first_sprite_offset_index then
-            print("--- START OF SPRITES ---")
-        elseif i == self.first_sound_offset_index then
-            print("--- START OF SOUNDS ---")
+    if display_everything then
+        print("--- START OF WALLS ---")
+        for i, v in ipairs(self.offsets) do
+            -- if i == 10 then break end
+            if i == self.first_sprite_offset_index then
+                print("--- START OF SPRITES ---")
+            elseif i == self.first_sound_offset_index then
+                print("--- START OF SOUNDS ---")
+            end
+            print("    ", i, "offset=", hex(v), string.format("%05d", v),
+                  "size=", self.sizes[i])
         end
-        --print("    ", i, "offset=", hex(v), string.format("%05d", v), "size=",
-        --      self.sizes[i])
     end
     print("------------------------------------")
 end
@@ -512,9 +477,7 @@ function PaletteFile:ppm(filename, format)
             row = row + 1
         end
     end
-    if format == nil then
-        format = "ascii"
-    end
+    if format == nil then format = "ascii" end
     img:save(filename, format)
 end
 
@@ -536,13 +499,13 @@ graph:info()
 
 local palette = PaletteFile.new(
                     "../data/Wolfenstein 3D/Shareware maps/1.0/GAMEPAL.OBJ")
---palette:save("palette.txt")
---palette:ppm("palette.ppm")
+-- palette:save("palette.txt")
+-- palette:ppm("palette.ppm")
 
---for i = 17, 20, 1 do palette:get_color(i) end
+-- for i = 17, 20, 1 do palette:get_color(i) end
 
 local function extract_walls()
-    for i=1, graph:nb_walls(), 1 do
+    for i = 1, graph:nb_walls(), 1 do
         local img = graph:extract_to_ppm(i, palette)
         if img ~= nil then
             img:save("walls" .. "\\" .. "tex" .. i .. ".ppm", "ascii")
@@ -557,18 +520,90 @@ print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
 
 -- 0s
 start_time = os.clock()
---lvl:extract_to_text(1, 1) -- level 1 plane 1
+-- lvl:extract_to_text(1, 1) -- level 1 plane 1
 print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
 
 local values = lvl:count_values(1, 1)
 print("Values of level 1 plane 1:")
-dump(values, get_keys_sorted_by_values(values))
+liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
 
-print("Tests:")
-local test_tbl = {
-    [103] = 15,
-    [2] = 22,
-    [59] = 17
-}
-local keys = get_keys_sorted_by_values(test_tbl)
-dump(test_tbl, keys)
+-- Décryptons une sprite
+
+local target = 72
+-- graph:info(true)
+graph:info(target)
+--local data = graph:extract_to_binary(72)
+local raw_data = graph:extract_to_binary(target, true)
+--liblua.table_print(data)
+
+-- La colonne la plus à gauche = la première
+local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) -- UInt16LE
+-- La colonne la plus à droite = la dernière
+local right_most = string.unpack("<I2", string.sub(raw_data, 3, 4)) -- UInt16LE
+-- Le nombre de colonne (par calcul)
+local nb_columns = right_most - left_most + 1
+-- L'offset du premier post de chaque colonne
+local column_first_post_offsets = {}
+for i=1, nb_columns, 1 do
+    local v = string.unpack("<I2", string.sub(raw_data, 5 + (i-1) * 2, 6 + (i-1) * 2))
+    table.insert(column_first_post_offsets, v)
+end
+-- Le début du pool de pixels (par calcul)
+local pixel_pool_offset = 4 + 2 * nb_columns + 1
+
+-- Affichage
+print('left=              ', left_most)
+print('right=             ', right_most)
+print('nb columns=        ', nb_columns)
+print('pixel pool offset= ', pixel_pool_offset)
+print('first post offset= ', column_first_post_offsets[1] + 1)
+
+--liblua.list_print(column_first_post_offsets)
+
+local pixel_pool = string.sub(raw_data, pixel_pool_offset, column_first_post_offsets[1])
+print('size of pixel pool=', string.len(pixel_pool))
+
+local texture = libpnm.PBM.new(64, 64, {255, 0, 255})
+local computed_size = 0
+pixel_pool_offset = 1
+-- Column by column
+for ic=1, #column_first_post_offsets, 1 do
+    local start_of_post = column_first_post_offsets[ic]
+    print(string.format("%03d", ic) .. ". ", "column=", left_most + (ic - 1), "post start=", start_of_post)
+    local post_count = 1
+    -- Post by post
+    while true do
+        local post = string.sub(raw_data, start_of_post + 1, start_of_post + 6)
+        local post_end = string.unpack("<I2", string.sub(post, 1, 2)) / 2 - 1
+        if post_end == -1 then
+            break
+        end
+        local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
+        print(post_count .. ". ", "start=", post_start, "end=", post_end, "size=", post_end - post_start + 1)
+        for py=1, post_end - post_start + 1, 1 do
+            print("col=", ic, "/", #column_first_post_offsets, pixel_pool_offset, "/", string.len(pixel_pool))
+            local v = string.unpack("<I1", string.sub(pixel_pool, pixel_pool_offset, pixel_pool_offset + 1)) -- get the pixel from the pixel pool
+            texture:set(left_most + (ic - 1), post_start + py, palette:get_color(v + 1))
+            pixel_pool_offset = pixel_pool_offset + 1
+        end
+        start_of_post = start_of_post + 6
+        post_count = post_count + 1
+        computed_size = computed_size + post_end-post_start+1
+    end
+end
+texture:save("zorba.ppm", "ascii")
+print('computed size=', computed_size)
+os.exit()
+
+
+print(#raw_data)
+print('pool de pixels =', pixel_pool)
+local pixels = {}
+for i=1, column_post_beginnings[1] - 1, 1 do
+    local v = string.unpack("<I1", string.sub(pixel_pool, i, i+1))
+    print(i .. ". ", v)
+    table.insert(pixels, v)
+end
+
+-- 72      offset= 0x3F600 259584  size=   268
+-- 433     offset= 0x83400 537600  size=   156
