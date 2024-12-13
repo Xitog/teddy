@@ -327,8 +327,11 @@ function GraphicFile.new(filename)
         table.insert(self.sizes, address)
     end
     f:close()
+    self.palette = nil
     return self
 end
+
+function GraphicFile:set_palette(palette) self.palette = palette end
 
 function GraphicFile:nb_walls() return self.first_sprite_offset_index - 1 end
 
@@ -342,9 +345,7 @@ function GraphicFile:extract_to_binary(num, raw)
     local size = self.sizes[num]
     local to = start + size
     local raw_data = string.sub(self.data, start, to)
-    if raw ~= nil and type(raw) == "boolean" and raw then
-        return raw_data
-    end
+    if raw ~= nil and type(raw) == "boolean" and raw then return raw_data end
     local data = {}
     for i = 1, size, 1 do
         local v = string.unpack("<I1", string.sub(raw_data, i, i))
@@ -353,14 +354,14 @@ function GraphicFile:extract_to_binary(num, raw)
     return data
 end
 
-function GraphicFile:extract_to_ppm(num, palette)
+function GraphicFile:extract_to_ppm(num)
     local raw = self:extract_to_binary(num)
     if raw == nil then return end
     -- On le traduit grâce à la palette
     local image = {}
     for _, v in ipairs(raw) do
         -- print("reading raw at :", v+1)
-        table.insert(image, palette:get_color(v + 1))
+        table.insert(image, self.palette:get_color(v + 1))
     end
     -- On produit le PPM
     local texture = libpnm.PBM.new(64, 64)
@@ -374,6 +375,78 @@ function GraphicFile:extract_to_ppm(num, palette)
             y = 1
         end
     end
+    return texture
+end
+
+function GraphicFile:draw_sprite(num, texture, x, y)
+    texture = texture or libpnm.PBM.new(64, 64, {255, 0, 255})
+    x = x or 0
+    y = y or 0
+    local raw_data = self:extract_to_binary(num, true)
+    -- La colonne la plus à gauche = la première
+    local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) + 1 -- UInt16LE
+    -- La colonne la plus à droite = la dernière
+    local right_most = string.unpack("<I2", string.sub(raw_data, 3, 4)) + 1 -- UInt16LE
+    -- Le nombre de colonne (par calcul)
+    local nb_columns = right_most - left_most + 1
+    -- L'offset du premier post de chaque colonne
+    local column_first_post_offsets = {}
+    for i = 1, nb_columns, 1 do
+        local v = string.unpack("<I2", string.sub(raw_data, 5 + (i - 1) * 2,
+                                                  6 + (i - 1) * 2))
+        table.insert(column_first_post_offsets, v)
+    end
+    -- Le début du pool de pixels (par calcul)
+    local pixel_pool_offset = 4 + 2 * nb_columns + 1
+
+    -- Affichage
+    print('left=              ', left_most)
+    print('right=             ', right_most)
+    print('nb columns=        ', nb_columns)
+    print('pixel pool offset= ', pixel_pool_offset)
+    print('first post offset= ', column_first_post_offsets[1] + 1)
+
+    local pixel_pool = string.sub(raw_data, pixel_pool_offset,
+                                  column_first_post_offsets[1] - 1)
+    print('size of pixel pool=', string.len(pixel_pool))
+
+    local computed_size = 0
+    pixel_pool_offset = 1
+    -- Column by column
+    for ic = 1, #column_first_post_offsets, 1 do
+        local start_of_posts = column_first_post_offsets[ic]
+        print("column",
+              string.format("%02d", ic) .. " / " .. #column_first_post_offsets,
+              "x = " .. (left_most + (ic - 1)), "post start offset = " .. start_of_posts)
+        local post_count = 1
+        -- Post by post
+        while true do
+            local post = string.sub(raw_data, start_of_posts + 1,
+                                    start_of_posts + 6)
+            local post_end = string.unpack("<I2", string.sub(post, 1, 2)) / 2 -
+                                 1
+            if post_end == -1 then break end
+            local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
+            print("    post " .. post_count .. " start = " .. post_start .. " end = " ..
+                  post_end .. " size = " .. (post_end - post_start + 1))
+            for py = 1, post_end - post_start + 1, 1 do
+                print("        pixel " .. pixel_pool_offset .. " / " ..
+                      string.len(pixel_pool))
+                -- get the pixel from the pixel pool
+                local v = string.unpack("<I1", string.sub(pixel_pool,
+                                                          pixel_pool_offset,
+                                                          pixel_pool_offset + 1))
+                texture:set(x + left_most + (ic - 1), y + post_start + py,
+                            self.palette:get_color(v + 1))
+                pixel_pool_offset = pixel_pool_offset + 1
+            end
+            start_of_posts = start_of_posts + 6
+            post_count = post_count + 1
+            computed_size = computed_size + post_end - post_start + 1
+        end
+    end
+    print('computed size=     ', computed_size)
+    print('nb columns=        ', nb_columns)
     return texture
 end
 
@@ -459,7 +532,6 @@ function PaletteFile:save(filename)
         local g = self.colors[i][2]
         local b = self.colors[i][3]
         file:write("\t" .. r .. "," .. g .. "," .. b .. ",\n")
-        -- file:write("\t{" .. r .. ", " .. g .. ", " .. b .. "}\n");
     end
     file:close()
 end
@@ -502,7 +574,7 @@ local palette = PaletteFile.new(
 -- palette:save("palette.txt")
 -- palette:ppm("palette.ppm")
 
--- for i = 17, 20, 1 do palette:get_color(i) end
+graph:set_palette(palette)
 
 local function extract_walls()
     for i = 1, graph:nb_walls(), 1 do
@@ -527,83 +599,8 @@ local values = lvl:count_values(1, 1)
 print("Values of level 1 plane 1:")
 liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
 
--- Décryptons une sprite
+local texture = graph:draw_sprite(67, libpnm.PBM.new(64, 64, {255, 255, 255}))
+texture:save("green_barrel.binary.ppm", "binary")
+texture:save("green_barrel.ascii.ppm", "ascii")
 
-local target = 72
--- graph:info(true)
-graph:info(target)
---local data = graph:extract_to_binary(72)
-local raw_data = graph:extract_to_binary(target, true)
---liblua.table_print(data)
-
--- La colonne la plus à gauche = la première
-local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) -- UInt16LE
--- La colonne la plus à droite = la dernière
-local right_most = string.unpack("<I2", string.sub(raw_data, 3, 4)) -- UInt16LE
--- Le nombre de colonne (par calcul)
-local nb_columns = right_most - left_most + 1
--- L'offset du premier post de chaque colonne
-local column_first_post_offsets = {}
-for i=1, nb_columns, 1 do
-    local v = string.unpack("<I2", string.sub(raw_data, 5 + (i-1) * 2, 6 + (i-1) * 2))
-    table.insert(column_first_post_offsets, v)
-end
--- Le début du pool de pixels (par calcul)
-local pixel_pool_offset = 4 + 2 * nb_columns + 1
-
--- Affichage
-print('left=              ', left_most)
-print('right=             ', right_most)
-print('nb columns=        ', nb_columns)
-print('pixel pool offset= ', pixel_pool_offset)
-print('first post offset= ', column_first_post_offsets[1] + 1)
-
---liblua.list_print(column_first_post_offsets)
-
-local pixel_pool = string.sub(raw_data, pixel_pool_offset, column_first_post_offsets[1])
-print('size of pixel pool=', string.len(pixel_pool))
-
-local texture = libpnm.PBM.new(64, 64, {255, 0, 255})
-local computed_size = 0
-pixel_pool_offset = 1
--- Column by column
-for ic=1, #column_first_post_offsets, 1 do
-    local start_of_post = column_first_post_offsets[ic]
-    print(string.format("%03d", ic) .. ". ", "column=", left_most + (ic - 1), "post start=", start_of_post)
-    local post_count = 1
-    -- Post by post
-    while true do
-        local post = string.sub(raw_data, start_of_post + 1, start_of_post + 6)
-        local post_end = string.unpack("<I2", string.sub(post, 1, 2)) / 2 - 1
-        if post_end == -1 then
-            break
-        end
-        local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
-        print(post_count .. ". ", "start=", post_start, "end=", post_end, "size=", post_end - post_start + 1)
-        for py=1, post_end - post_start + 1, 1 do
-            print("col=", ic, "/", #column_first_post_offsets, pixel_pool_offset, "/", string.len(pixel_pool))
-            local v = string.unpack("<I1", string.sub(pixel_pool, pixel_pool_offset, pixel_pool_offset + 1)) -- get the pixel from the pixel pool
-            texture:set(left_most + (ic - 1), post_start + py, palette:get_color(v + 1))
-            pixel_pool_offset = pixel_pool_offset + 1
-        end
-        start_of_post = start_of_post + 6
-        post_count = post_count + 1
-        computed_size = computed_size + post_end-post_start+1
-    end
-end
-texture:save("zorba.ppm", "ascii")
-print('computed size=', computed_size)
 os.exit()
-
-
-print(#raw_data)
-print('pool de pixels =', pixel_pool)
-local pixels = {}
-for i=1, column_post_beginnings[1] - 1, 1 do
-    local v = string.unpack("<I1", string.sub(pixel_pool, i, i+1))
-    print(i .. ". ", v)
-    table.insert(pixels, v)
-end
-
--- 72      offset= 0x3F600 259584  size=   268
--- 433     offset= 0x83400 537600  size=   156
