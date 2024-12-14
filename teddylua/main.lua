@@ -354,7 +354,10 @@ function GraphicFile:extract_to_binary(num, raw)
     return data
 end
 
-function GraphicFile:extract_to_ppm(num)
+function GraphicFile:draw_wall(num, texture, x, y)
+    texture = texture or libpnm.PBM.new(64, 64, {0, 0, 0})
+    x = x or 0
+    y = y or 0
     local raw = self:extract_to_binary(num)
     if raw == nil then return end
     -- On le traduit grâce à la palette
@@ -364,11 +367,10 @@ function GraphicFile:extract_to_ppm(num)
         table.insert(image, self.palette:get_color(v + 1))
     end
     -- On produit le PPM
-    local texture = libpnm.PBM.new(64, 64)
-    local x = 1
-    local y = 1
+    local i = 1
+    local j = 1
     for _, v in ipairs(image) do
-        texture:set(x, y, v)
+        texture:set(x + i, y + j, v)
         y = y + 1
         if y == 65 then
             x = x + 1
@@ -397,17 +399,18 @@ function GraphicFile:draw_sprite(num, texture, x, y)
         table.insert(column_first_post_offsets, v)
     end
     -- Le début du pool de pixels (par calcul)
-    local pixel_pool_offset = 4 + 2 * nb_columns + 1
+    local pixel_pool_offset = 4 + 2 * nb_columns -- left & right + 2 / colonnes
 
-    -- Affichage
+    -- Affichage début
     print('left=              ', left_most)
     print('right=             ', right_most)
     print('nb columns=        ', nb_columns)
     print('pixel pool offset= ', pixel_pool_offset)
-    print('first post offset= ', column_first_post_offsets[1] + 1)
+    print('first post offset= ', column_first_post_offsets[1])
 
-    local pixel_pool = string.sub(raw_data, pixel_pool_offset,
-                                  column_first_post_offsets[1] - 1)
+    -- sub prend le 2ème index mais on ne fait pas +1 => on est juste avant
+    local pixel_pool = string.sub(raw_data, pixel_pool_offset + 1,
+                                  column_first_post_offsets[1])
     print('size of pixel pool=', string.len(pixel_pool))
 
     local computed_size = 0
@@ -445,8 +448,16 @@ function GraphicFile:draw_sprite(num, texture, x, y)
             computed_size = computed_size + post_end - post_start + 1
         end
     end
-    print('computed size=     ', computed_size)
+
+    -- Affichage fin
+    print('left=              ', left_most)
+    print('right=             ', right_most)
     print('nb columns=        ', nb_columns)
+    print('pixel pool offset= ', pixel_pool_offset)
+    print('first post offset= ', column_first_post_offsets[1] + 1)
+    print('size of pixel pool=', string.len(pixel_pool))
+    print('computed size=     ', computed_size)
+
     return texture
 end
 
@@ -599,8 +610,35 @@ local values = lvl:count_values(1, 1)
 print("Values of level 1 plane 1:")
 liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
 
-local texture = graph:draw_sprite(67, libpnm.PBM.new(64, 64, {255, 255, 255}))
-texture:save("green_barrel.binary.ppm", "binary")
-texture:save("green_barrel.ascii.ppm", "ascii")
+local start_export = 83
+local exports = {
+    --[19] = "player_spawn_oriented_north",
+    --[20] = "player_spawn_oriented_east",
+    --[21] = "player_spawn_oriented_south",
+    --[22] = "player_spawn_oriented_west",
+    [66] = "puddle",
+    [67] = "green_barrel",
+    [68] = "table_and_chairs",
+    [69] = "floor_lamp",
+    [70] = "chandelier",
+    [71] = "hanged_skeleton",
+    [72] = "dog_food",
+    [73] = "while_pillar",
+    [74] = "tree",
+    [75] = "skeleton",
+    [76] = "sink",
+    [77] = "potted_plant",
+    [78] = "urn",
+    [79] = "bare_table",
+    [80] = "ceiling_lamp",
+    [81] = "pans",
+    [82] = "suit_of_armor",
+}
+for k, v in pairs(exports) do
+    if k >= start_export then
+        local texture = graph:draw_sprite(k, libpnm.PBM.new(64, 64, {255, 255, 255}))
+        texture:save(v .. ".ppm", "binary")
+    end
+end
 
 os.exit()
