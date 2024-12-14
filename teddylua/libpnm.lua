@@ -35,7 +35,10 @@ local libpnm = {}
 
 local PBM = {}
 PBM.__index = PBM
-function PBM.new(width, height)
+function PBM.new(width, height, default)
+    if default == nil then
+        default = {0, 0, 0}
+    end
     local self = setmetatable({}, PBM)
     self.classname = 'PBM'
     self.width = width
@@ -43,7 +46,7 @@ function PBM.new(width, height)
     self.size = self.width * self.height
     self.data = {}
     for _ = 1, self.width * self.height, 1 do
-        table.insert(self.data, {0, 0, 0})
+        table.insert(self.data, default)
     end
     return self
 end
@@ -91,14 +94,16 @@ function PBM:save(filename, format)
     if format == "ascii" then
         file:write("P3\n");
         file:write("# ASCII PPM file\n")
+        file:write(self.width .. " " .. self.height .. "\n")
+        file:write("255\n")
     elseif format == "binary" then
         file:write("P6\n");
         file:write("# Binary PPM file\n")
+        file:write(self.width .. " " .. self.height .. "\n")
+        file:write("255 ")
     else
         error("Unknow format : ", format)
     end
-    file:write(self.width .. " " .. self.height .. "\n")
-    file:write("255\n")
     if format == "binary" then
         file:close()
         file = io.open(filename, "a+b")
@@ -116,7 +121,7 @@ function PBM:save(filename, format)
             if format == "ascii" then
                 file:write(r .. " " .. g .. " " .. b .. "\n")
             else
-                local s = string.pack('B', g) .. string.pack('B', b) .. string.pack('B', r)
+                local s = string.pack('B', r) .. string.pack('B', g) .. string.pack('B', b)
                 file:write(s)
             end
         end
@@ -141,7 +146,5 @@ end
 
 libpnm["PBM"] = PBM
 libpnm["tests"] = tests
-
--- tests()
 
 return libpnm
