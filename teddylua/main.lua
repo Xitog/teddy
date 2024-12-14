@@ -371,10 +371,10 @@ function GraphicFile:draw_wall(num, texture, x, y)
     local j = 1
     for _, v in ipairs(image) do
         texture:set(x + i, y + j, v)
-        y = y + 1
-        if y == 65 then
-            x = x + 1
-            y = 1
+        j = j + 1
+        if j == 65 then
+            i = i + 1
+            j = 1
         end
     end
     return texture
@@ -609,6 +609,13 @@ print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
 local values = lvl:count_values(1, 1)
 print("Values of level 1 plane 1:")
 liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
+
+local wall = graph:draw_wall(1, libpnm.PBM.new(64, 64, {255, 0, 255}))
+if wall == nil then
+    print("no wall")
+else
+    wall:save("wall.ppm", "binary")
+end
 
 local start_export = 83
 local exports = {
