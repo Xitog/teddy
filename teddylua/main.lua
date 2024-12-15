@@ -11,13 +11,6 @@ local liblua = require("liblua")
 -- run with lua.exe main.lua
 local function hex(data) return string.format("0x%04X", data) end
 
-local function p(t)
-    if t == nil then return "nil" end
-    local s = ""
-    for _, v in ipairs(t) do s = s .. " " .. v end
-    return s
-end
-
 local HeaderFile = {}
 HeaderFile.__index = HeaderFile
 function HeaderFile.new(filename)
@@ -385,6 +378,7 @@ function GraphicFile:draw_sprite(num, texture, x, y)
     x = x or 0
     y = y or 0
     local raw_data = self:extract_to_binary(num, true)
+    if raw_data == nil then return end
     -- La colonne la plus à gauche = la première
     local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) + 1 -- UInt16LE
     -- La colonne la plus à droite = la dernière
@@ -420,7 +414,8 @@ function GraphicFile:draw_sprite(num, texture, x, y)
         local start_of_posts = column_first_post_offsets[ic]
         print("column",
               string.format("%02d", ic) .. " / " .. #column_first_post_offsets,
-              "x = " .. (left_most + (ic - 1)), "post start offset = " .. start_of_posts)
+              "x = " .. (left_most + (ic - 1)),
+              "post start offset = " .. start_of_posts)
         local post_count = 1
         -- Post by post
         while true do
@@ -430,11 +425,12 @@ function GraphicFile:draw_sprite(num, texture, x, y)
                                  1
             if post_end == -1 then break end
             local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
-            print("    post " .. post_count .. " start = " .. post_start .. " end = " ..
-                  post_end .. " size = " .. (post_end - post_start + 1))
+            print("    post " .. post_count .. " start = " .. post_start ..
+                      " end = " .. post_end .. " size = " ..
+                      (post_end - post_start + 1))
             for py = 1, post_end - post_start + 1, 1 do
                 print("        pixel " .. pixel_pool_offset .. " / " ..
-                      string.len(pixel_pool))
+                          string.len(pixel_pool))
                 -- get the pixel from the pixel pool
                 local v = string.unpack("<I1", string.sub(pixel_pool,
                                                           pixel_pool_offset,
@@ -465,7 +461,7 @@ end
 -- obtenir le diag de classe participante : à partir d'une feuille blanche ? On met les liens de nav ?
 -- ou à partir du diag de classe métier et on surligne en jaune ce qu'on ajoute
 
-function GraphicFile:info(index)
+function GraphicFile:info(index, to_file)
     local display_everything = false
     if index ~= nil and type(index) == "number" then
         local v = self.offsets[index]
@@ -475,29 +471,39 @@ function GraphicFile:info(index)
     elseif index ~= nil and type(index) == "boolean" then
         display_everything = index
     end
-    print("------------------------------------")
-    print("[Graphic File Information]")
-    print("------------------------------------")
-    print("File name = " .. self.filename)
-    print("File size = " .. self.size)
-    print("Number of chunks = " .. self.total_number_of_chunks)
-    print("First sprite offset index = " .. self.first_sprite_offset_index)
-    print("First sound offset index = " .. self.first_sound_offset_index)
-    print("List of chunk offsets = ")
+    local s = "------------------------------------\n"
+    s = s .. "[Graphic File Information]\n"
+    s = s .. "------------------------------------\n"
+    s = s .. "(offset are 0-based like in C)\n"
+    s = s .. "File name = " .. self.filename .. "\n"
+    s = s .. "File size = " .. self.size .. "\n"
+    s = s .. "Number of chunks = " .. self.total_number_of_chunks .. "\n"
+    s = s .. "First sprite offset index = " .. self.first_sprite_offset_index ..
+            "\n"
+    s = s .. "First sound offset index = " .. self.first_sound_offset_index ..
+            "\n"
+    s = s .. "List of chunk offsets = " .. "\n"
     if display_everything then
-        print("--- START OF WALLS ---")
+        s = s .. "--- START OF WALLS ---\n"
         for i, v in ipairs(self.offsets) do
-            -- if i == 10 then break end
             if i == self.first_sprite_offset_index then
-                print("--- START OF SPRITES ---")
+                s = s .. "--- START OF SPRITES ---\n"
             elseif i == self.first_sound_offset_index then
-                print("--- START OF SOUNDS ---")
+                s = s .. "--- START OF SOUNDS ---\n"
             end
-            print("    ", i, "offset=", hex(v), string.format("%05d", v),
-                  "size=", self.sizes[i])
+            s = s .. "    " .. string.format("%03d", i) .. " offset = " ..
+                    " hex: " .. string.format("%5x", v) .. " dec: " .. string.format("%06d", v) ..
+                    " size = " .. self.sizes[i] .. "\n"
         end
     end
-    print("------------------------------------")
+    s = s .. "------------------------------------\n"
+    if to_file == nil then
+        print(s)
+    else
+        local f = io.open(to_file, "w")
+        f:write(s)
+        f:close()
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -568,84 +574,123 @@ end
 -- Main
 -------------------------------------------------------------------------------
 
-local h =
-    HeaderFile.new("../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
-h:info()
-print()
-local lvl = LevelFile.new(
-                "../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1", h)
-lvl:info()
+local function main()
 
-local graph = GraphicFile.new(
-                  "../data/Wolfenstein 3D/Shareware maps/1.0/VSWAP.WL1")
-graph:info()
+    local h = HeaderFile.new(
+                  "../data/Wolfenstein 3D/Shareware maps/1.0/MAPHEAD.WL1")
+    h:info()
+    print()
+    local lvl = LevelFile.new(
+                    "../data/Wolfenstein 3D/Shareware maps/1.0/MAPTEMP.WL1", h)
+    lvl:info()
 
-local palette = PaletteFile.new(
-                    "../data/Wolfenstein 3D/Shareware maps/1.0/GAMEPAL.OBJ")
--- palette:save("palette.txt")
--- palette:ppm("palette.ppm")
+    local graph = GraphicFile.new(
+                      "../data/Wolfenstein 3D/Shareware maps/1.0/VSWAP.WL1")
+    graph:info()
 
-graph:set_palette(palette)
+    local palette = PaletteFile.new(
+                        "../data/Wolfenstein 3D/Shareware maps/1.0/GAMEPAL.OBJ")
+    -- palette:save("palette.txt")
+    -- palette:ppm("palette.ppm")
 
-local function extract_walls()
-    for i = 1, graph:nb_walls(), 1 do
-        local img = graph:extract_to_ppm(i, palette)
-        if img ~= nil then
-            img:save("walls" .. "\\" .. "tex" .. i .. ".ppm", "ascii")
+    graph:set_palette(palette)
+
+    -- 54s
+    local start_time = os.clock()
+    -- lvl:extract_to_ppm(3, graph, palette, "binary") 54.85
+    print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
+
+    -- 0s
+    start_time = os.clock()
+    -- lvl:extract_to_text(1, 1) -- level 1 plane 1
+    print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
+
+    local values = lvl:count_values(1, 1)
+    print("Values of level 1 plane 1:")
+    liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
+
+    local wall = graph:draw_wall(1, libpnm.PBM.new(64, 64, {255, 0, 255}))
+    if wall == nil then
+        print("no wall")
+    else
+        print("wall")
+        -- wall:save("wall.ppm", "binary")
+    end
+
+    local start_export = 65 --115
+    local end_export = 65
+    local exports = {
+        -- [19] = "player_spawn_oriented_north",
+        -- [20] = "player_spawn_oriented_east",
+        -- [21] = "player_spawn_oriented_south",
+        -- [22] = "player_spawn_oriented_west",
+        [65] = "x2",
+        [66] = "puddle",
+        [67] = "green_barrel",
+        [68] = "table_and_chairs",
+        [69] = "floor_lamp",
+        [70] = "chandelier",
+        [71] = "hanged_skeleton",
+        [72] = "dog_food",
+        [73] = "while_pillar",
+        [74] = "tree",
+        [75] = "skeleton",
+        [76] = "sink",
+        [77] = "potted_plant",
+        [78] = "urn",
+        [79] = "bare_table",
+        [80] = "ceiling_lamp",
+        [81] = "pans",
+        [82] = "suit_of_armor",
+        [83] = "hanging_cage",
+        [84] = "skeleton_in_cage",
+        [85] = "bones",
+        [86] = "silver_key",
+        [87] = "gold_key",
+        [88] = "bed",
+        [89] = "bucket",
+        [90] = "food",
+        [91] = "medkit",
+        [92] = "ammo_clip",
+        [93] = "machine_gun",
+        [94] = "chaingun",
+        [95] = "cross_treasure",
+        [96] = "chalice_treasure",
+        [97] = "chest_treasure",
+        [98] = "crown_treasure",
+        [99] = "life_up",
+        [100] = "bones_and_blood",
+        [101] = "barrel",
+        [102] = "well",
+        [103] = "empty_well",
+        [104] = "blood",
+        [105] = "flag",
+        [106] = "x_call_apogee",
+        [107] = "x_m1",
+        [108] = "x_m2",
+        [109] = "x_m3",
+        [110] = "x_m4",
+        [111] = "x_stove",
+        [112] = "x_spears",
+        [113] = "x_m5",
+        [114] = "x_m6" -- soldat
+    }
+    for k, v in pairs(exports) do
+        print("Exporting at " .. k .. " : " .. v)
+        if k >= start_export and (end_export == nil or k <= end_export) then
+            local texture = graph:draw_sprite(k, libpnm.PBM
+                                                  .new(64, 64, {255, 255, 255}))
+            if texture == nil then
+                print("Nothing at " .. k)
+            else
+                texture:save(v .. "_" .. k .. ".ppm", "binary")
+            end
         end
     end
+
+    graph:info(true, "graphinfo.txt")
 end
 
--- 54s
-local start_time = os.clock()
--- lvl:extract_to_ppm(3, graph, palette, "binary") 54.85
-print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
-
--- 0s
-start_time = os.clock()
--- lvl:extract_to_text(1, 1) -- level 1 plane 1
-print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
-
-local values = lvl:count_values(1, 1)
-print("Values of level 1 plane 1:")
-liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
-
-local wall = graph:draw_wall(1, libpnm.PBM.new(64, 64, {255, 0, 255}))
-if wall == nil then
-    print("no wall")
-else
-    wall:save("wall.ppm", "binary")
-end
-
-local start_export = 83
-local exports = {
-    --[19] = "player_spawn_oriented_north",
-    --[20] = "player_spawn_oriented_east",
-    --[21] = "player_spawn_oriented_south",
-    --[22] = "player_spawn_oriented_west",
-    [66] = "puddle",
-    [67] = "green_barrel",
-    [68] = "table_and_chairs",
-    [69] = "floor_lamp",
-    [70] = "chandelier",
-    [71] = "hanged_skeleton",
-    [72] = "dog_food",
-    [73] = "while_pillar",
-    [74] = "tree",
-    [75] = "skeleton",
-    [76] = "sink",
-    [77] = "potted_plant",
-    [78] = "urn",
-    [79] = "bare_table",
-    [80] = "ceiling_lamp",
-    [81] = "pans",
-    [82] = "suit_of_armor",
-}
-for k, v in pairs(exports) do
-    if k >= start_export then
-        local texture = graph:draw_sprite(k, libpnm.PBM.new(64, 64, {255, 255, 255}))
-        texture:save(v .. ".ppm", "binary")
-    end
-end
+main()
 
 os.exit()
