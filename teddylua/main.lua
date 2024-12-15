@@ -236,25 +236,29 @@ function LevelFile:extract_to_text(ilevel, iplane)
     file:close()
 end
 
-function LevelFile:extract_to_ppm(i, graph, palette, format)
-    local data = self:extract_to_binary(i)
+function LevelFile:extract_to_ppm(i, graph, format)
+    local plane0_data = self:extract_to_binary(i, 0)
+    local plane1_data = self:extract_to_binary(i, 1)
     local size = 64
     local width = size
     local height = size
     local megatexture = libpnm.PBM.new(width * 64, height * 64)
     for line = 1, height, 1 do
         for col = 1, width, 1 do
-            local raw_num = data[(line - 1) * 64 + col]
-            local num = raw_num * 2 - 1
-            if raw_num <= 64 or raw_num == 90 or raw_num == 91 or raw_num == 92 or
-                raw_num == 93 or raw_num == 100 then
-                if raw_num == 90 or raw_num == 91 then
+            -- Drawing wall
+            local raw_num0 = plane0_data[(line - 1) * 64 + col]
+            local num = raw_num0 * 2 - 1
+            if raw_num0 <= 64 or raw_num0 == 90 or raw_num0 == 91 or raw_num0 == 92 or
+                raw_num0 == 93 or raw_num0 == 100 then
+                if raw_num0 == 90 or raw_num0 == 91 then
                     num = 57
-                elseif raw_num == 92 or raw_num == 93 then
+                elseif raw_num0 == 92 or raw_num0 == 93 then
                     num = 63
-                elseif raw_num == 100 then
+                elseif raw_num0 == 100 then
                     num = 61
                 end
+                graph:draw_wall(num, megatexture, (col - 1) * 64, (line - 1) * 64)
+                --[[
                 local raw = graph:extract_to_binary(num)
                 -- On le traduit grâce à la palette
                 local image = {}
@@ -272,13 +276,22 @@ function LevelFile:extract_to_ppm(i, graph, palette, format)
                         y = 1
                     end
                 end
-            elseif raw_num >= 106 and raw_num <= 143 then
+                ]]
+            elseif raw_num0 >= 106 and raw_num0 <= 143 then
                 megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64,
                                  {112, 112, 112}, true)
                 megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64,
                                  {224, 224, 224}, false)
             else
-                print(raw_num)
+                print('Missing wall : ' .. raw_num0)
+            end
+            -- Drawing sprite
+            local raw_num1 = plane1_data[(line - 1) * 64 + col]
+            local num1 = raw_num1 + 43
+            if num1 >= 65 and num1 <= 105 then
+                graph:draw_sprite(num1, megatexture, (col - 1) * 64, (line - 1) * 64)
+            elseif raw_num1 ~= 0 then
+                print('Missing sprite : raw=' .. raw_num1 .. ' +43=' .. num1)
             end
         end
     end
@@ -373,7 +386,7 @@ function GraphicFile:draw_wall(num, texture, x, y)
     return texture
 end
 
-function GraphicFile:draw_sprite(num, texture, x, y)
+function GraphicFile:draw_sprite_debug(num, texture, x, y)
     texture = texture or libpnm.PBM.new(64, 64, {255, 0, 255})
     x = x or 0
     y = y or 0
@@ -454,6 +467,63 @@ function GraphicFile:draw_sprite(num, texture, x, y)
     print('size of pixel pool=', string.len(pixel_pool))
     print('computed size=     ', computed_size)
 
+    return texture
+end
+
+function GraphicFile:draw_sprite(num, texture, x, y)
+    texture = texture or libpnm.PBM.new(64, 64, {255, 0, 255})
+    x = x or 0
+    y = y or 0
+    local raw_data = self:extract_to_binary(num, true)
+    if raw_data == nil then return end
+    -- La colonne la plus à gauche = la première
+    local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) + 1 -- UInt16LE
+    -- La colonne la plus à droite = la dernière
+    local right_most = string.unpack("<I2", string.sub(raw_data, 3, 4)) + 1 -- UInt16LE
+    -- Le nombre de colonne (par calcul)
+    local nb_columns = right_most - left_most + 1
+    -- L'offset du premier post de chaque colonne
+    local column_first_post_offsets = {}
+    for i = 1, nb_columns, 1 do
+        local v = string.unpack("<I2", string.sub(raw_data, 5 + (i - 1) * 2,
+                                                  6 + (i - 1) * 2))
+        table.insert(column_first_post_offsets, v)
+    end
+    -- Le début du pool de pixels (par calcul)
+    local pixel_pool_offset = 4 + 2 * nb_columns -- left & right + 2 / colonnes
+
+    -- sub prend le 2ème index mais on ne fait pas +1 => on est juste avant
+    local pixel_pool = string.sub(raw_data, pixel_pool_offset + 1,
+                                  column_first_post_offsets[1])
+
+    local computed_size = 0
+    pixel_pool_offset = 1
+    -- Column by column
+    for ic = 1, #column_first_post_offsets, 1 do
+        local start_of_posts = column_first_post_offsets[ic]
+        local post_count = 1
+        -- Post by post
+        while true do
+            local post = string.sub(raw_data, start_of_posts + 1,
+                                    start_of_posts + 6)
+            local post_end = string.unpack("<I2", string.sub(post, 1, 2)) / 2 -
+                                 1
+            if post_end == -1 then break end
+            local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
+            for py = 1, post_end - post_start + 1, 1 do
+                -- get the pixel from the pixel pool
+                local v = string.unpack("<I1", string.sub(pixel_pool,
+                                                          pixel_pool_offset,
+                                                          pixel_pool_offset + 1))
+                texture:set(x + left_most + (ic - 1), y + post_start + py,
+                            self.palette:get_color(v + 1))
+                pixel_pool_offset = pixel_pool_offset + 1
+            end
+            start_of_posts = start_of_posts + 6
+            post_count = post_count + 1
+            computed_size = computed_size + post_end - post_start + 1
+        end
+    end
     return texture
 end
 
@@ -617,8 +687,8 @@ local function main()
         -- wall:save("wall.ppm", "binary")
     end
 
-    local start_export = 65 --115
-    local end_export = 65
+    local start_export = 666 --115
+    local end_export = nil
     local exports = {
         -- [19] = "player_spawn_oriented_north",
         -- [20] = "player_spawn_oriented_east",
@@ -688,7 +758,9 @@ local function main()
         end
     end
 
-    graph:info(true, "graphinfo.txt")
+    --graph:info(true, "graphinfo.txt")
+
+    lvl:extract_to_ppm(1, graph, "binary")
 end
 
 main()
