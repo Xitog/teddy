@@ -81,6 +81,15 @@ local function table_print(t, keys)
     end
 end
 
+local function table_includes_value(t, needle)
+    for _, v in pairs(t) do
+        if v == needle then
+            return true
+        end
+    end
+    return false
+end
+
 local function tests()
     print("Tests:")
     local test_tbl = {[103] = 15, [2] = 22, [59] = 17}
@@ -93,6 +102,7 @@ liblua["table_search_key"] = table_search_key
 liblua["table_print"] = table_print
 liblua["list_print"] = list_print
 liblua["table_get_keys_sorted_by_values"] = table_get_keys_sorted_by_values
+liblua["table_includes_value"] = table_includes_value
 liblua["tests"] = tests
 
 return liblua

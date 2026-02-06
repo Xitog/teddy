@@ -1,0 +1,65 @@
+Wolf3dData Project History and links
+
+06/02/2026
+On avance bien : je génère un BMP avec les plans 0 & 1 en C ! Mise sous git
+Découverte d’info sur le format AudioT de Wolfenstein + article que j’aurais aimé finir
+23h08 : petite réorganisation du code et j’exporte toutes les sprites ! Y’a tous les ennemis 
+et les armes du hud !
+00h28 : YES ! J’affiche les sprites (mais en gardant le magenta)
+00h31 : YES ! Les sprites sont transparentes maintenant !
+00h41 : YES ! Les murs poussables sont affichés également. Il ne manque plus que le 
+point de départ.
+
+02/02/25
+Yes ! J’ai recompris comment on décode et génère les sprites 
+Correction de 103_blood & 96_chest_treasure : ils ont un post_end à 0 pour col vide
+
+28/01/25
+Début lecture des sprites
+
+26/01/25
+J’arrive à générer le plane 0 du niveau 0 comme en Lua !
+Par rapport à hier : correction des tiles (x - 1) * 2 et tiles des portes. Next : plane 1.
+
+25/01/25
+Yes ! J’ai réussi à exporter une image du plane0 dans un BMP de 48 Mo !
+
+23/01/25
+Idée : il me faut une librairie image pour décomposer le travail !
+
+22/01/25
+J’essaye de sortir le niveau au format BMP, mais c dur… + struct Level
+
+20/01/25
+Je sors tous les murs au format PPM et BMP (first !) en C.
+C::wall4.ppm = Lua::tex5.ppm. Bug dans la bibliothèque PNG, dommage elle était simple
+
+19/01/25
+Début de lecture du fichier VSWAP, je commence par le header
+
+18/01/25
+22h16 : Yes ! J’ai divisé mon code de main.c vers levels.c, assets.c, common.c !
+J’ai fini d’encoder la palette comme un littéral, et pas avec GAMEPAL.OBJ
+
+16/01/25
+Création du fichier assets.c pour décoder et start encodage palette
+
+14/01/25
+23h21 : je produis ma première image PNG depuis C grâce à libattopng
+
+13/01/25
+Je me bats avec le décodage data des niveaux. RLEW ok mais encore un segfault.
+Un des segfault que j’avais été que j’inversé val et num (val répétée num fois)
+
+12/01/25
+21h08 : j’arrive à lire le fichier MAPTEMP.WL1 en entier ! (enfin only lvl headers)
+
+10/01/25
+Je m’attaque maintenant à MAPTEMP.
+
+06/01/25
+J’ai commencé le texte (sous word) et le code (en C) : je lis le fichier MAPHEAD
+
+Links
+
+Todo

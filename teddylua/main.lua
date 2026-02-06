@@ -5,6 +5,13 @@ local libpnm = require("libpnm")
 local liblua = require("liblua")
 
 -------------------------------------------------------------------------------
+-- Globales
+-------------------------------------------------------------------------------
+
+_G["WALLS"] = 1
+_G["OBJECTS"] = 2
+
+-------------------------------------------------------------------------------
 -- Local definitions
 -------------------------------------------------------------------------------
 
@@ -162,18 +169,19 @@ function LevelFile:info()
     print("Ending = " .. self.ending)
 end
 
+-- both are 1 based in Lua and 0 based in C
 function LevelFile:extract_to_binary(ilevel, iplane)
     local level = self.levels[ilevel]
     local offset = nil
     local size = nil
-    if iplane == 0 then
+    if iplane == 1 then
         offset = level.offset0
         size = level.size0
-    elseif iplane == 1 then
+    elseif iplane == 2 then
         offset = level.offset1
         size = level.size1
     else
-        error("iplane must be 0 or 1")
+        error("iplane must be 1 or 2 in Lua")
     end
     local plane = string.sub(self.raw_data, 1 + offset, 1 + offset + size)
     local data = {}
@@ -237,8 +245,8 @@ function LevelFile:extract_to_text(ilevel, iplane)
 end
 
 function LevelFile:extract_to_ppm(i, graph, format)
-    local plane0_data = self:extract_to_binary(i, 0)
-    local plane1_data = self:extract_to_binary(i, 1)
+    local plane0_data = self:extract_to_binary(i, _G["WALLS"])
+    local plane1_data = self:extract_to_binary(i, _G["OBJECTS"])
     local size = 64
     local width = size
     local height = size
@@ -286,12 +294,17 @@ function LevelFile:extract_to_ppm(i, graph, format)
                 print('Missing wall : ' .. raw_num0)
             end
             -- Drawing sprite
-            local raw_num1 = plane1_data[(line - 1) * 64 + col]
-            local num1 = raw_num1 + 43
-            if num1 >= 65 and num1 <= 105 then
-                graph:draw_sprite(num1, megatexture, (col - 1) * 64, (line - 1) * 64)
-            elseif raw_num1 ~= 0 then
-                print('Missing sprite : raw=' .. raw_num1 .. ' +43=' .. num1)
+            local num1 = plane1_data[(line - 1) * 64 + col]
+            if num1 == 19 or num1 == 20 or num1 == 21 or num1 == 22 then
+                megatexture:rect((col - 1) * 64 + 24, (line - 1) * 64 + 24, 16, 16,
+                                 {0, 255, 0}, true)
+            elseif num1 >= 23 and num1 <= 62 then
+                graph:draw_sprite(num1 + 43, megatexture, (col - 1) * 64, (line - 1) * 64)
+            elseif num1 == 98 then
+                megatexture:rect((col - 1) * 64, (line - 1) * 64, 64, 64,
+                                 {0, 255, 0}, false)
+            elseif num1 ~= 0 then
+                print('Missing sprite : ' .. num1)
             end
         end
     end
@@ -384,6 +397,72 @@ function GraphicFile:draw_wall(num, texture, x, y)
         end
     end
     return texture
+end
+
+function GraphicFile:sprite_info(num)
+    local raw_data = self:extract_to_binary(num, true)
+    if raw_data == nil then return end
+    -- La colonne la plus à gauche = la première
+    local left_most = string.unpack("<I2", string.sub(raw_data, 1, 2)) + 1 -- UInt16LE
+    -- La colonne la plus à droite = la dernière
+    local right_most = string.unpack("<I2", string.sub(raw_data, 3, 4)) + 1 -- UInt16LE
+    -- Le nombre de colonne (par calcul)
+    local nb_columns = right_most - left_most + 1
+    -- L'offset du premier post de chaque colonne
+    local column_first_post_offsets = {}
+    for i = 1, nb_columns, 1 do
+        local v = string.unpack("<I2", string.sub(raw_data, 5 + (i - 1) * 2,
+                                                  6 + (i - 1) * 2))
+        table.insert(column_first_post_offsets, v)
+    end
+    -- Le début du pool de pixels (par calcul)
+    local pixel_pool_offset = 4 + 2 * nb_columns -- left & right + 2 / colonnes
+
+    print('#', num, ' left=', left_most, ' right=', right_most, ' nb col=', nb_columns,
+        ' pixel pool=', pixel_pool_offset, ' post offset=', column_first_post_offsets[1])
+
+     -- sub prend le 2ème index mais on ne fait pas +1 => on est juste avant
+    local pixel_pool = string.sub(raw_data, pixel_pool_offset + 1,
+                                  column_first_post_offsets[1])
+    print('size of pixel pool=', string.len(pixel_pool))
+
+    local computed_size = 0
+    pixel_pool_offset = 1
+    -- Column by column
+    for ic = 1, #column_first_post_offsets, 1 do
+        local start_of_posts = column_first_post_offsets[ic]
+        print("column",
+              string.format("%02d", ic) .. " / " .. #column_first_post_offsets,
+              "x = " .. (left_most + (ic - 1)),
+              "post start offset = " .. start_of_posts)
+        local post_count = 1
+        -- Post by post
+        while true do
+            local post = string.sub(raw_data, start_of_posts + 1,
+                                    start_of_posts + 6)
+            local post_end = string.unpack("<I2", string.sub(post, 1, 2)) / 2 -
+                                 1
+            if post_end == -1 then break end
+            local post_start = string.unpack("<I2", string.sub(post, 5, 6)) / 2
+            print("    post " .. post_count .. " start = " .. post_start ..
+                      " end = " .. post_end .. " size = " ..
+                      (post_end - post_start + 1))
+            for py = 1, post_end - post_start + 1, 1 do
+                print("        pixel " .. pixel_pool_offset .. " / " ..
+                          string.len(pixel_pool))
+                -- get the pixel from the pixel pool
+                local v = string.unpack("<I1", string.sub(pixel_pool,
+                                                          pixel_pool_offset,
+                                                          pixel_pool_offset + 1))
+                --texture:set(x + left_most + (ic - 1), y + post_start + py,
+                --            self.palette:get_color(v + 1))
+                pixel_pool_offset = pixel_pool_offset + 1
+            end
+            start_of_posts = start_of_posts + 6
+            post_count = post_count + 1
+            computed_size = computed_size + post_end - post_start + 1
+        end
+    end
 end
 
 function GraphicFile:draw_sprite_debug(num, texture, x, y)
@@ -670,15 +749,6 @@ local function main()
     -- lvl:extract_to_ppm(3, graph, palette, "binary") 54.85
     print(string.format("extract_to_ppm: %.2f\n", os.clock() - start_time))
 
-    -- 0s
-    start_time = os.clock()
-    -- lvl:extract_to_text(1, 1) -- level 1 plane 1
-    print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
-
-    local values = lvl:count_values(1, 1)
-    print("Values of level 1 plane 1:")
-    liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
-
     local wall = graph:draw_wall(1, libpnm.PBM.new(64, 64, {255, 0, 255}))
     if wall == nil then
         print("no wall")
@@ -694,7 +764,7 @@ local function main()
         -- [20] = "player_spawn_oriented_east",
         -- [21] = "player_spawn_oriented_south",
         -- [22] = "player_spawn_oriented_west",
-        [65] = "x2",
+        [65] = "demo",
         [66] = "puddle",
         [67] = "green_barrel",
         [68] = "table_and_chairs",
@@ -753,14 +823,38 @@ local function main()
             if texture == nil then
                 print("Nothing at " .. k)
             else
-                texture:save(v .. "_" .. k .. ".ppm", "binary")
+                print("Saving")
+                --texture:save(v .. "_" .. k .. ".ppm", "binary")
             end
         end
     end
 
+    --for i=65, 72 do
+    --    graph:sprite_info(i)
+    --end
+    graph:sprite_info(104) -- 68
+     os.exit()
+
     --graph:info(true, "graphinfo.txt")
 
+    -- 0s
+    start_time = os.clock()
+    --lvl:extract_to_text(1, 2) -- level 1 plane 2
+    print(string.format("extract_to_text: %.2f\n", os.clock() - start_time))
+
+    local values = lvl:count_values(1, 2)
+    print("Values of level 1 plane 1:")
+    local filtered = {}
+    for k, v in pairs(values) do
+        if (k < 23 or k > 62) and not liblua.table_includes_value({0}, k) then
+            filtered[k] = v
+        end
+    end
+    values = filtered
+    liblua.table_print(values, liblua.table_get_keys_sorted_by_values(values))
+
     lvl:extract_to_ppm(1, graph, "binary")
+
 end
 
 main()
