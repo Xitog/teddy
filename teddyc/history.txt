@@ -9,6 +9,7 @@ et les armes du hud !
 00h31 : YES ! Les sprites sont transparentes maintenant !
 00h41 : YES ! Les murs poussables sont affichés également. Il ne manque plus que le 
 point de départ.
+Je vais sortir ces infos de mon journal, elles deviennent trop grosses et le mettre sous git
 
 02/02/25
 Yes ! J’ai recompris comment on décode et génère les sprites 
