@@ -1,18 +1,27 @@
 Wolf3dData Project History and links
 
+08/02/2026
+21h39 : je sors les stats sur un niveau !
+C’est-à-dire les valeurs utilisées dans le plan 0 pour le moment.
+Avant le repas j’avais réussi à sortir les stats brutes, classées par la valeur et maintenant avec l’option count_order,
+je peux les sortir triées de la plus présente à la moins présente !
+J’ai aussi complété un tableur avec les valeurs sur la carte, les valeurs dans le fichier des assets VSWAP.
+J'ai renommé neguev.exe en wt.exe
+.\wt.exe stats 0 count_order
+
 06/02/2026
 On avance bien : je génère un BMP avec les plans 0 & 1 en C ! Mise sous git
 Découverte d’info sur le format AudioT de Wolfenstein + article que j’aurais aimé finir
-23h08 : petite réorganisation du code et j’exporte toutes les sprites ! Y’a tous les ennemis 
+23h08 : petite réorganisation du code et j’exporte toutes les sprites ! Y’a tous les ennemis
 et les armes du hud !
 00h28 : YES ! J’affiche les sprites (mais en gardant le magenta)
 00h31 : YES ! Les sprites sont transparentes maintenant !
-00h41 : YES ! Les murs poussables sont affichés également. Il ne manque plus que le 
+00h41 : YES ! Les murs poussables sont affichés également. Il ne manque plus que le
 point de départ.
 Je vais sortir ces infos de mon journal, elles deviennent trop grosses et le mettre sous git
 
 02/02/25
-Yes ! J’ai recompris comment on décode et génère les sprites 
+Yes ! J’ai recompris comment on décode et génère les sprites
 Correction de 103_blood & 96_chest_treasure : ils ont un post_end à 0 pour col vide
 
 28/01/25

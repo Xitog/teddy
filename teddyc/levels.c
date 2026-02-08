@@ -93,12 +93,14 @@ void display_level_header(const LevelHeader * lh)
 
 bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * output)
 {
-    printf("Compressed data length   = %u\n", length);
     uint16_t size = read_uint16(mem, offset);
+#ifdef DEBUG
+    printf("Compressed data length   = %u\n", length);
     printf("Uncompressed data length = %u\n", size);
     printf("Previsionned data length = %d\n", 64*64*2); // 2 bytes by case
     printf("Compressed ratio         = %d%%\n", (int) round(((double) length / size) * 100));
     printf("Starting offset          = %u\n", offset);
+#endif
     uint32_t tile_index = 0;
     uint32_t offset_read = offset + 2; // in bytes, +2 for size
     while (offset_read < offset + length)
@@ -107,7 +109,11 @@ bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * out
         if (elem != 0xABCD)
         {
             if (tile_index < 1000)
+            {
+                #ifdef DEBUG
                 printf("@%u/%u Uncompressed data : %u (%x)\n", offset_read, length, elem, elem);
+                #endif
+            }
             output[tile_index] = elem;
             tile_index += 1;
             offset_read += 2;
@@ -117,7 +123,11 @@ bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * out
             uint16_t num = read_uint16(mem, offset_read + 2);
             uint16_t val = read_uint16(mem, offset_read + 4);
             if (tile_index < 1000)
+            {
+                #ifdef DEBUG
                 printf("@%u/%u Compressed data detected : repeat %u times the value %u\n", offset_read, length, num, val);
+                #endif
+            }
             for (uint16_t i = 0; i < num; i++)
             {
                 output[tile_index] = val;
@@ -187,6 +197,58 @@ bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, u
     }
     fclose(f);
     return true;
+}
+
+void level_stat(Level lvl, uint8_t plane, bool order_by_count)
+{
+    uint16_t counts[256]; // MAX 256 different values
+    for (uint16_t i = 0 ; i < 256 ; i++)
+    {
+        counts[i] = 0;
+    }
+    uint16_t values = 0;
+    for (uint16_t line = 0 ; line < lvl.width ; line++)
+    {
+        for (uint16_t col = 0 ; col < lvl.height ; col++)
+        {
+            uint8_t val = lvl.plane[plane][line][col];
+            if (counts[val] == 0)
+            {
+                values += 1;
+            }
+            counts[val] += 1;
+        }
+    }
+    printf("There are %u values:\n", values);
+    if (!order_by_count)
+    {
+        for (uint16_t i = 0 ; i < 256 ; i++)
+        {
+            if (counts[i] != 0)
+            {
+                printf("%u : %u\n", i, counts[i]);
+            }
+        }
+    } else {
+        // Order
+        uint16_t index_last_max = 0;
+        uint16_t last_max = 0;
+        for (uint16_t count = 0 ; count < values ; count++)
+        {
+            for (uint16_t i = 0 ; i < 256 ; i++)
+            {
+                if (counts[i] > last_max)
+                {
+                    last_max = counts[i];
+                    index_last_max = i;
+                }
+            }
+            printf("%u : %u\n", index_last_max, last_max);
+            counts[index_last_max] = 0; // we delete step by step
+            last_max = 0;
+            count += 1;
+        }
+    }
 }
 
 bool export_plane_to_txt(Level lvl, uint8_t plane)
@@ -300,7 +362,7 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             {
                 if (raw_tile == 90 || raw_tile == 91)
                 {
-                    tile = 56; // Green door
+                    tile = 56; // Steel door
                 }
                 else if (raw_tile == 92 || raw_tile == 93)
                 {

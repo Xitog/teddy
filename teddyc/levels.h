@@ -45,6 +45,7 @@ bool read_level_data(const Data levelDataFile, LevelHeader * level_headers, uint
 
 Level create_level(uint8_t number, uint16_t width, uint16_t height, uint8_t planeNumber);
 Level create_level_from_files(const Data levelDataFile, LevelHeader * level_headers, uint8_t level);
+void level_stat(Level lvl, uint8_t plane, bool order_by_count);
 bool export_plane_to_txt(Level lvl, uint8_t plane);
 Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[]);
 

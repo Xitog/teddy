@@ -15,6 +15,8 @@
 #include <stdint.h> // int32_t
 #include <stdbool.h> // bool
 #include <math.h> // round
+#include <ctype.h> // isdigit
+
 #include "common.h"
 #include "levels.h"
 #include "assets.h"
@@ -145,6 +147,30 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     return true;
 }
 
+bool is_str_digit(const char * s)
+{
+    for (int32_t i=0; i < strlen(s); i++)
+    {
+        if (isdigit(s[i]) == 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+int32_t str_to_digit(const char * s)
+{
+    int32_t res = 0;
+    int32_t dec = 1;
+    for (int32_t i=strlen(s)-1; i >= 0; i--)
+    {
+        res += dec * (s[i] - '0');
+        dec *= 10;
+    }
+    return res;
+}
+
 int main(int argc, const char *argv[])
 {
     //-------------------------------------------------------------------------
@@ -154,7 +180,56 @@ int main(int argc, const char *argv[])
     const bool EXPORT_PLANE_TO_TEXT = false;
     const bool EXPORT_ALL_SPRITES = false;
     const bool EXPORT_ALL_WALLS = false;
-    const bool EXPORT_PLANE_TO_BMP = true;
+    const bool EXPORT_PLANE_TO_BMP = false;
+    bool RUN_STAT = false;
+    uint32_t TARGET = 0;
+    bool ORDER_BY_COUNT = false;
+
+    //-------------------------------------------------------------------------
+    // Commands
+    //-------------------------------------------------------------------------
+    // id : identify game and version
+    // list : list all recognized files
+    // asset X : extract asset at index X (or all) in VSWAP in the correct format (bmp)
+    // map X F : extract map number X (or all) in F format (txt, csv or bmp)
+    // stat X : run statistics on map X
+
+    bool good = false;
+    printf("Arguments:\n");
+    for (uint8_t i = 0; i < argc; i++)
+    {
+        printf("    %02u. %s\n", i, argv[i]);
+    }
+    if (argc >= 2)
+    {
+        if (strcmp(argv[1], "stats") == 0)
+        {
+            if (argc == 2 || !is_str_digit(argv[2]))
+            {
+                printf("You must indicate a level number to run the statistics.\n");
+                good = false;
+            }
+            else
+            {
+                TARGET = str_to_digit(argv[2]);
+                printf("Running statistics on level %u\n", TARGET);
+                RUN_STAT = true;
+                good = true;
+                if (argc == 4 && strcmp(argv[3], "count_order") == 0)
+                {
+                    ORDER_BY_COUNT = true;
+                }
+            }
+        }
+        else if (strcmp(argv[1], "list") == 0)
+        {
+            printf("List all files\n");
+        }
+    }
+    if (!good)
+    {
+        return EXIT_FAILURE;
+    }
 
     //-------------------------------------------------------------------------
     // Reading Level files
@@ -195,6 +270,7 @@ int main(int argc, const char *argv[])
             return EXIT_FAILURE;
         }
     }
+
     // Exports
     if (EXPORT_PLANE_TO_TEXT)
     {
@@ -208,6 +284,14 @@ int main(int argc, const char *argv[])
         {
             return EXIT_FAILURE;
         }
+    }
+
+    // Stats
+    if (RUN_STAT)
+    {
+        printf("Start stat on %u\n", TARGET);
+        Level lvl = create_level_from_files(levelDataFile, level_headers, TARGET);
+        level_stat(lvl, 0, ORDER_BY_COUNT);
     }
 
     //-------------------------------------------------------------------------
