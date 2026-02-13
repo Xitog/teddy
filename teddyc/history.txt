@@ -1,5 +1,9 @@
 Wolf3dData Project History and links
 
+13/02/2026
+Pour la première fois, je compile avec Windows.h pour afficher le current dir.
+Attendre tout ce temps pour faire ça.
+
 08/02/2026
 21h39 : je sors les stats sur un niveau !
 C’est-à-dire les valeurs utilisées dans le plan 0 pour le moment.
