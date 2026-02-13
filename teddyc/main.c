@@ -22,6 +22,7 @@
 #include "assets.h"
 #include "libattopng.h"
 #include "image.h"
+#include "os.h"
 
 const char * HEADER_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPHEAD.WL1";
 const char * LEVEL_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPTEMP.WL1";
@@ -226,10 +227,12 @@ int main(int argc, const char *argv[])
             printf("List all files\n");
         }
     }
+    /*
     if (!good)
     {
         return EXIT_FAILURE;
     }
+    */
 
     //-------------------------------------------------------------------------
     // Reading Level files
@@ -428,6 +431,9 @@ int main(int argc, const char *argv[])
         image_save_to_bmp(img, "level0.bmp");
         image_free(img);
     }
+
+    char * cwd = getCurrentDir();
+    printf("Current dir is : %s\n", cwd);
 
     return EXIT_SUCCESS;
 }
