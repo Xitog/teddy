@@ -1,5 +1,9 @@
 Wolf3dData Project History and links
 
+15/02/2026
+J’arrive à programmer une élicitation de dir en C avec la taille du fichier et le last write time.
+Les fichiers que j'ai récupérés sont bien du 1992/5/5
+
 13/02/2026
 Pour la première fois, je compile avec Windows.h pour afficher le current dir.
 Attendre tout ce temps pour faire ça.

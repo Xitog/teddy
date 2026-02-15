@@ -432,8 +432,12 @@ int main(int argc, const char *argv[])
         image_free(img);
     }
 
+    getBuildInfo();
     char * cwd = getCurrentDir();
     printf("Current dir is : %s\n", cwd);
+    getFiles(cwd);
+    printf("\n-----------------------------------------\n");
+    getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
 
     return EXIT_SUCCESS;
 }
