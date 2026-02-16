@@ -28,8 +28,11 @@ typedef struct ImageStructure {
 } Image;
 
 Image * image_new(uint32_t width, uint32_t height);
+void image_draw_digit(Image * dest, uint32_t x, uint32_t y, uint8_t digit, Pixel color);
+void image_draw_line(Image * dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, Pixel color);
 void image_draw_image(Image * dest, uint32_t x, uint32_t y, Image * source);
 void image_draw_rect(Image * img, uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color, bool filled);
+void image_safe_set_pixel(Image * img, int32_t x, int32_t y, Pixel color);
 void image_set_pixel(Image * img, uint32_t x, uint32_t y, Pixel color);
 void image_fill(Image * img, Pixel color);
 void image_save_to_bmp(Image * img, const char * file_path);

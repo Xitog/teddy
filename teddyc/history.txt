@@ -1,5 +1,9 @@
 Wolf3dData Project History and links
 
+16/02/2026
+Je dessine des lignes avec l'algorithme de Bresenham et pour les cas où x1=x2 or y1=y2 avec une largeur fixe de 1 pixel.
+Je dessine un “0” en taille fixe.
+
 15/02/2026
 J’arrive à programmer une élicitation de dir en C avec la taille du fichier et le last write time.
 Les fichiers que j'ai récupérés sont bien du 1992/5/5

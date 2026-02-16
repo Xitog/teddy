@@ -439,5 +439,12 @@ int main(int argc, const char *argv[])
     printf("\n-----------------------------------------\n");
     getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
 
+    Image * img = image_new(100, 100);
+    image_draw_line(img, 0, 0, 99, 99, RED);
+    image_draw_line(img, 0, 99, 99, 0, GREEN);
+    image_draw_digit(img, 70, 50, 0, BLUE);
+    image_draw_digit(img, 80, 50, 1, MAGENTA);
+    image_save_to_bmp(img, "textX.bmp");
+
     return EXIT_SUCCESS;
 }

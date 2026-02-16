@@ -44,7 +44,10 @@ void getFiles(const char * dir_path)
     {
         if (file_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
-            printf("DIR : %s\n", file_info.cFileName);
+            if (strcmp(file_info.cFileName, ".") != 0 && strcmp(file_info.cFileName, "..") != 0)
+            {
+                printf("DIR : %s\n", file_info.cFileName);
+            }
         } else {
             LARGE_INTEGER file_size;
             file_size.HighPart = file_info.nFileSizeHigh;
