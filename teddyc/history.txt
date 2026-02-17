@@ -1,5 +1,10 @@
 Wolf3dData Project History and links
 
+17/02/2026
+Ok, je reprends tout de 0 pour le dessin de ligne de non verticale ou horizontale. Le 0 et le 1 sont corrects.
+Le résultat est OK mais la conversion en C est vraiment touchy. Un 75.000 affichée par %f est casté en 74 si je ne fais
+pas un round avant !
+
 16/02/2026
 Je dessine des lignes avec l'algorithme de Bresenham et pour les cas où x1=x2 or y1=y2 avec une largeur fixe de 1 pixel.
 Je dessine un “0” en taille fixe.

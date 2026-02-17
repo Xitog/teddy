@@ -5,6 +5,7 @@
 #include <stdio.h> // FILE, fopen, fwrite, fclose
 #include <stdlib.h> // malloc, memcpy, free
 #include <stdbool.h> // bool
+#include <math.h>
 
 typedef struct PixelStructure {
     uint8_t r;

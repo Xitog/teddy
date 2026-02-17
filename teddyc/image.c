@@ -46,6 +46,7 @@ void image_draw_digit(Image *dest, uint32_t x, uint32_t y, uint8_t digit, Pixel 
 
 void image_draw_line(Image *dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, Pixel color)
 {
+    //printf("x1=%u y1=%u x2=%u y2=%u\n", x1, y1, x2, y2);
     if (y2 == y1)
     {
         if (y1 >= 0 && y1 < dest->height)
@@ -78,28 +79,37 @@ void image_draw_line(Image *dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_
     }
     else
     {
-        // Bresenham's line algorithm as explained by Wikipedia
-        // Do not handle thickness other than 1
-        int64_t dy = y2 - y1;
-        int64_t dx = x2 - x1;
-        int64_t y = y1;
-        double e = 0.0;
-        double e10 = dy / dx;
-        double e01 = -1.0;
-        int64_t xmin = (x1 < x2) ? x1 : x2;
-        int64_t xmax = (x1 < x2) ? x2 : x1;
-        int64_t yincrement = (y1 < y2) ? 1 : -1;
-        for (int64_t x = xmin; x <= xmax; x += 1)
+        uint32_t diff_x = (x1 < x2) ? x2 - x1 : x1 - x2;
+        uint32_t diff_y = (y1 < y2) ? y2 - y1 : y1 - y2;
+        uint32_t count = 0;
+        if (diff_x > diff_y)
         {
-            if (x >= 0 && x < dest->width && y >= 0 && y < dest->height)
+            uint32_t mod_x = (x1 < x2) ? 1 : -1;
+            double y = y1;
+            double factor = (y1 < y2) ? 1 : -1;
+            double mod_y = ((double) diff_y / (double) diff_x) * factor;
+            for (uint32_t x = x1 ; count <= diff_x ; x += mod_x, count++)
             {
-                dest->rows[y][x] = color;
+                if (x >= 0 && x < dest->width && y >= 0 && y < dest->height)
+                {
+                    //printf("%u %f (as %u) %f\n", x, y, (uint32_t) round(y), mod_y);
+                    dest->rows[(uint32_t) round(y)][x] = color;
+                    y += mod_y;
+                }
             }
-            e = e + e10;
-            if (e >= 0.5)
+        } else {
+            uint32_t mod_y = (y1 < y2) ? 1 : -1;
+            double x = x1;
+            double factor = (x1 < x2) ? 1 : -1;
+            double mod_x = ((double) diff_x / (double) diff_y) * factor;
+            for (uint32_t y = y1 ; count <= diff_y ; y += mod_y, count++)
             {
-                y += yincrement;
-                e = e + e01;
+                if (x >= 0 && x < dest->width && y >= 0 && y < dest->height)
+                {
+                    //printf("%f (as %u) %u %f\n", x, (uint32_t) round(x), y, mod_x);
+                    dest->rows[y][(uint32_t) round(x)] = color;
+                    x += mod_x;
+                }
             }
         }
     }
