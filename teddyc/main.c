@@ -390,9 +390,8 @@ int main(int argc, const char *argv[])
         "x_stove",          // 110 x
         "x_spears",         // 111 x
         "x_m5",             // 112 x
-        "x_m6"              // 113
     };
-    const uint8_t max_named_sprites = 113;
+    const uint8_t max_named_sprites = 112; // 113 est le premier guard
     Image ** sprites;
     sprites = malloc(sizeof(Image *) * assetHeader.first_sound - assetHeader.first_sprite);
 

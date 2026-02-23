@@ -385,10 +385,9 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 {
                     tile = 60; // Elevator door
                 }
-                printf("at=(%d, %d) tile = %u, raw_tile = %u, ptr = %p\n", col*64, line*64, tile, raw_tile, textures[tile]);
+                //printf("at=(%d, %d) tile = %u, raw_tile = %u, ptr = %p\n", col*64, line*64, tile, raw_tile, textures[tile]);
                 if (textures[tile] != NULL)
                 {
-                    //if (line > 0) return img; // DEBUG
                     image_draw_image(img, col * 64, line * 64, textures[tile]);
                 }
             }
@@ -396,6 +395,8 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             {
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREY, true);
                 image_draw_rect(img, col * 64, line * 64, 64, 64, NEAR_WHITE, false);
+            } else {
+                printf("Plane 0 unhandled value : %u at %u,%u \n", raw_tile, line, col);
             }
             // -- Plane 1 --
             // Magical number... don't ask why
@@ -413,17 +414,24 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 31, (col + 1) * 64 - 30, line * 64 + 15, GREEN);
                 image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 32, (col + 1) * 64 - 30, line * 64 + 48, GREEN);
             } else if (raw_sprite == 21) { // Depart south
-
+                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 31, (line + 1) * 64 - 10, GREEN); // |
+                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 32, (line + 1) * 64 - 10, GREEN); // |
+                image_draw_line(img, col * 64 + 31, (line + 1) * 64 - 10, col * 64 + 15, (line + 1) * 64 - 30, GREEN);
+                image_draw_line(img, col * 64 + 32, (line + 1) * 64 - 10, col * 64 + 48, (line + 1) * 64 - 30, GREEN);
             } else if (raw_sprite == 22) { // Depart west
-
-            } else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL)
-            {
+                image_draw_line(img, col * 64 + 10, line * 64 + 31, (col + 1) * 64 - 10, line * 64 + 31, GREEN); // -
+                image_draw_line(img, col * 64 + 10, line * 64 + 32, (col + 1) * 64 - 10, line * 64 + 32, GREEN); // -
+                image_draw_line(img, col * 64 + 10, line * 64 + 31, col * 64 + 30, line * 64 + 15, GREEN);
+                image_draw_line(img, col * 64 + 10, line * 64 + 32, col * 64 + 30, line * 64 + 48, GREEN);
+            } else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL) {
                 // remove the first 64 walls with -64
                 image_draw_image(img, col * 64, line * 64, sprites[raw_sprite + 42 - 64]);
-            }
-            else if (raw_sprite == 98)
-            {
+            } else if (raw_sprite == 98) {
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
+            } else if (raw_sprite == 124) { // Dead guard
+                image_draw_image(img, col * 64, line * 64, sprites[158 - 64]);
+            } else if (raw_sprite != 0) { // 0 is for empty
+                printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
             }
         }
     }
