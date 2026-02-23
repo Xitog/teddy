@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+23/02/2026
+Start position : implémentée grâce à une belle flèche pour nord (non vérifié) et est (vérifié).
+
 17/02/2026
 Ok, je reprends tout de 0 pour le dessin de ligne de non verticale ou horizontale. Le 0 et le 1 sont corrects.
 Le résultat est OK mais la conversion en C est vraiment touchy. Un 75.000 affichée par %f est casté en 74 si je ne fais
