@@ -181,7 +181,7 @@ int main(int argc, const char *argv[])
     const bool EXPORT_PLANE_TO_TEXT = false;
     const bool EXPORT_ALL_SPRITES = false;
     const bool EXPORT_ALL_WALLS = false;
-    const bool EXPORT_PLANE_TO_BMP = false;
+    const bool EXPORT_LEVEL_TO_BMP = true;
     bool RUN_STAT = false;
     uint32_t TARGET = 0;
     bool ORDER_BY_COUNT = false;
@@ -259,6 +259,7 @@ int main(int argc, const char *argv[])
     }
     // Read level headers
     LevelHeader * level_headers = malloc(sizeof(LevelHeader) * header.number);
+    printf("Level name : W x H | Plane 0 [Size] | Plane 1 [Size] | Plane 2 [Size] |\n");
     for (uint8_t i = 0; i < header.number; i++)
     {
         ok = read_level_header(levelDataFile, header.level_header_ptr[i], &level_headers[i]);
@@ -423,7 +424,7 @@ int main(int argc, const char *argv[])
     // Level export to bmp
     //-------------------------------------------------------------------------
 
-    if (EXPORT_PLANE_TO_BMP)
+    if (EXPORT_LEVEL_TO_BMP)
     {
         Level lvl = create_level_from_files(levelDataFile, level_headers, 0);
         Image * img = level_to_image(lvl, ALL_PLANES, textures, sprites);

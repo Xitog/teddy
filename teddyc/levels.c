@@ -77,7 +77,19 @@ bool read_level_header(const Data mem, uint32_t offset, LevelHeader * lh)
     return true;
 }
 
+
 void display_level_header(const LevelHeader * lh)
+{
+    printf("%-16s : %ux%u | %06d %4x [%4u] | %06d %4x [%4u] | %06d %4x [%4u] |\n",
+        lh->name,
+        lh->width, lh->height,
+        lh->offsetPlane0, lh->offsetPlane0, lh->lenghtPlane0,
+        lh->offsetPlane1, lh->offsetPlane1, lh->lenghtPlane1,
+        lh->offsetPlane2, lh->offsetPlane2, lh->lenghtPlane2
+    );
+}
+
+void display_level_header2(const LevelHeader * lh)
 {
     printf("------------------------------------------------------------\n");
     printf("Level name         : %s\n", lh->name);
@@ -351,6 +363,7 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
     {
         for (uint16_t col = 0 ; col < lvl.height ; col++)
         {
+            // -- Plane 0 --
             uint16_t raw_tile = lvl.plane[0][line][col];
             // La plupart des textures sont stockées sous deux formes :
             // claire ou sombre
@@ -384,10 +397,26 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREY, true);
                 image_draw_rect(img, col * 64, line * 64, 64, 64, NEAR_WHITE, false);
             }
+            // -- Plane 1 --
             // Magical number... don't ask why
             uint16_t raw_sprite = lvl.plane[1][line][col];
             // 65 -42 = 23 et 104 -42 = 62
-            if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL)
+            if (raw_sprite == 19) // Depart north
+            {
+                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 31, (line + 1) * 64 - 10, GREEN); // |
+                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 32, (line + 1) * 64 - 10, GREEN); // |
+                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 15, line * 64 + 30, GREEN);
+                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 48, line * 64 + 30, GREEN);
+            } else if (raw_sprite == 20) { // Depart east (checked)
+                image_draw_line(img, col * 64 + 10, line * 64 + 31, (col + 1) * 64 - 10, line * 64 + 31, GREEN); // -
+                image_draw_line(img, col * 64 + 10, line * 64 + 32, (col + 1) * 64 - 10, line * 64 + 32, GREEN); // -
+                image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 31, (col + 1) * 64 - 30, line * 64 + 15, GREEN);
+                image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 32, (col + 1) * 64 - 30, line * 64 + 48, GREEN);
+            } else if (raw_sprite == 21) { // Depart south
+
+            } else if (raw_sprite == 22) { // Depart west
+
+            } else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL)
             {
                 // remove the first 64 walls with -64
                 image_draw_image(img, col * 64, line * 64, sprites[raw_sprite + 42 - 64]);
