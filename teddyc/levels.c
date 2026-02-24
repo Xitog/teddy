@@ -430,6 +430,14 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
             } else if (raw_sprite == 124) { // Dead guard
                 image_draw_image(img, col * 64, line * 64, sprites[158 - 64]);
+            } else if (raw_sprite == 108 || raw_sprite == 144 || raw_sprite == 180) { // guard any/med/hard standing east
+                image_draw_image(img, col * 64, line * 64, sprites[119 - 64]);
+            } else if (raw_sprite == 109 || raw_sprite == 145 || raw_sprite == 181) { // guard any/med/hard standing north
+                image_draw_image(img, col * 64, line * 64, sprites[117 - 64]);
+            } else if (raw_sprite == 110 || raw_sprite == 146 || raw_sprite == 182) { // guard any/med/hard standing west
+                image_draw_image(img, col * 64, line * 64, sprites[115 - 64]);
+            } else if (raw_sprite == 111 || raw_sprite == 147 || raw_sprite == 183) { // guard any/med/hard standing south
+                image_draw_image(img, col * 64, line * 64, sprites[113 - 64]);
             } else if (raw_sprite != 0) { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
             }
