@@ -21,6 +21,7 @@ extern const Pixel WHITE;
 extern const Pixel GREY;
 extern const Pixel NEAR_WHITE;
 extern const Pixel MAGENTA;
+extern const Pixel ORANGE;
 
 typedef struct ImageStructure {
     uint32_t width;

@@ -20,7 +20,6 @@
 #include "common.h"
 #include "levels.h"
 #include "assets.h"
-#include "libattopng.h"
 #include "image.h"
 #include "os.h"
 
@@ -122,7 +121,7 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
         return true;
     }
     printf("Wall texture %u : %u ptr %u len\n", index, ptr, len);
-    libattopng_t *wall = libattopng_new(64, 64, PNG_RGB);
+    //libattopng_t *wall = libattopng_new(64, 64, PNG_RGB);
     uint32_t count = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -133,7 +132,7 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
         //printf("%u. %u\n", count, pixel);
         //uint32_t rgb = (palette[pixel][0] << 24) | (palette[pixel][1] << 16) | (palette[pixel][2] << 8);
         uint32_t rgb = palette[pixel][0] + palette[pixel][1] * 255 + palette[pixel][2] * 255 * 255;
-        libattopng_set_pixel(wall, y, x, rgb);
+        //libattopng_set_pixel(wall, y, x, rgb);
         x += 1;
         if (x == 64)
         {
@@ -143,8 +142,8 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     }
     char file_name[255];
     sprintf(file_name, "wall%u.png", index);
-    libattopng_save(wall, file_name);
-    libattopng_destroy(wall);
+    //libattopng_save(wall, file_name);
+    //libattopng_destroy(wall);
     return true;
 }
 

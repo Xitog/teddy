@@ -9,6 +9,7 @@ const Pixel WHITE = {.r = 255, .g = 255, .b = 255};
 const Pixel GREY = {.r = 112, .g = 112, .b = 112};
 const Pixel NEAR_WHITE = {.r = 224, .g = 224, .b = 224};
 const Pixel MAGENTA = {.r = 255, .g = 0, .b = 255};
+const Pixel ORANGE = {.r = 255, .g = 165, .b = 0};
 
 Image *image_new(uint32_t width, uint32_t height)
 {

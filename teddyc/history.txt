@@ -1,5 +1,11 @@
 Wolf3dData Project History and links
 
+07/03/2026
+Indication du niveau de difficulté des gardes standing avec un rectangle orange si medium ou rouge is hard.
+
+24/02/2026
+J’arrive à afficher les gardes standing de n’importe quelles difficultés dans mon niveau !
+
 23/02/2026
 Start position : implémentée grâce à une belle flèche pour nord (non vérifié) et est (vérifié).
 

@@ -441,6 +441,14 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             } else if (raw_sprite != 0) { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
             }
+            // Difficulty indication
+            if (raw_sprite == 144 || raw_sprite == 145 || raw_sprite == 146 || raw_sprite == 147)
+            {
+                image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, ORANGE, false);
+            } else if (raw_sprite == 180 || raw_sprite == 181 || raw_sprite == 182 || raw_sprite == 183)
+            {
+                image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, RED, false);
+            }
         }
     }
     return img;
