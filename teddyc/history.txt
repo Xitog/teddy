@@ -98,4 +98,24 @@ J’ai commencé le texte (sous word) et le code (en C) : je lis le fichier MAPH
 
 Links
 
-Todo
+https://vpoupet.github.io/wolfenstein/docs/files One the most comprehensive source on Wolfenstein 3d data format
+
+https://moddingwiki.shikadi.net/wiki/GameMaps_Format Another comprehensive source of information
+https://moddingwiki.shikadi.net/wiki/Wolfenstein_3-D
+https://moddingwiki.shikadi.net/wiki/TED5
+
+https://devinsmith.net/backups/bruce/wolf3d.html
+
+https://www.classicdosgames.com/game/Wolfenstein_3D.html
+
+https://tcrf.net/Wolfenstein_3D_(DOS)
+
+https://www.libretro.com/index.php/category/wolfenstein-3d/
+
+http://www.users.globalnet.co.uk/~brlowe/faq.htm
+
+https://vgmaps.de/maps/pc/wolfenstein-3-d.php Isometric maps rendered by DarkWolf
+
+https://www.gamedeveloper.com/design/classic-tools-retrospective-john-romero-talks-about-creating-ted-the-tile-editor-that-shipped-over-30-games
+
+https://github.com/HiPhish/Wolf3DExtract CLI tool for extracting assets from Wolfenstein 3D for PC
