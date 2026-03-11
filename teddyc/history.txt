@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+11/03/2026
+Ecriture en couleur dans la console
+
 07/03/2026
 Indication du niveau de difficulté des gardes standing avec un rectangle orange si medium ou rouge is hard.
 
@@ -103,6 +106,7 @@ https://vpoupet.github.io/wolfenstein/docs/files One the most comprehensive sour
 https://moddingwiki.shikadi.net/wiki/GameMaps_Format Another comprehensive source of information
 https://moddingwiki.shikadi.net/wiki/Wolfenstein_3-D
 https://moddingwiki.shikadi.net/wiki/TED5
+https://moddingwiki.shikadi.net/wiki/Id_Software_RLEW_compression
 
 https://devinsmith.net/backups/bruce/wolf3d.html
 

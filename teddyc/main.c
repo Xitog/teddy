@@ -445,5 +445,11 @@ int main(int argc, const char *argv[])
     image_draw_digit(img, 80, 50, 1, MAGENTA);
     image_save_to_bmp(img, "textX.bmp");
 
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+    printf("Good");
+    SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE); // white
+    printf("bye\n");
+
     return EXIT_SUCCESS;
 }
