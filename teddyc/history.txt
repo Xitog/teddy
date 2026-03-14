@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+13/03/2026
+Ajouté le soldat patrouillant, début du chien patrouillant
+
 11/03/2026
 Ecriture en couleur dans la console
 
@@ -100,6 +103,9 @@ Je m’attaque maintenant à MAPTEMP.
 J’ai commencé le texte (sous word) et le code (en C) : je lis le fichier MAPHEAD
 
 Links
+
+https://github.com/id-Software/wolf3d Source code
+https://github.com/id-Software/wolf3d/blob/master/WOLFSRC/WL_GAME.C Enemy definitions with difficulty levels
 
 https://vpoupet.github.io/wolfenstein/docs/files One the most comprehensive source on Wolfenstein 3d data format
 

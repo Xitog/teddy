@@ -357,6 +357,7 @@ Level create_level(uint8_t number, uint16_t width, uint16_t height, uint8_t plan
 Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[])
 {
     Image * img = image_new(4096, 4096); // 64*64
+    uint16_t unhandled_plane1 = 0;
 
     // We go through the plane of the level
     for (uint16_t line = 0 ; line < lvl.width ; line++)
@@ -430,6 +431,7 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
             } else if (raw_sprite == 124) { // Dead guard
                 image_draw_image(img, col * 64, line * 64, sprites[158 - 64]);
+            // -- Guard -------------------------------------------------------
             } else if (raw_sprite == 108 || raw_sprite == 144 || raw_sprite == 180) { // guard any/med/hard standing east
                 image_draw_image(img, col * 64, line * 64, sprites[119 - 64]);
             } else if (raw_sprite == 109 || raw_sprite == 145 || raw_sprite == 181) { // guard any/med/hard standing north
@@ -438,18 +440,37 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_image(img, col * 64, line * 64, sprites[115 - 64]);
             } else if (raw_sprite == 111 || raw_sprite == 147 || raw_sprite == 183) { // guard any/med/hard standing south
                 image_draw_image(img, col * 64, line * 64, sprites[113 - 64]);
+            } else if (raw_sprite == 112 || raw_sprite == 148 || raw_sprite == 184) { // guard any/med/hard patrolling east
+                image_draw_image(img, col * 64, line * 64, sprites[127 - 64]);
+            } else if (raw_sprite == 113 || raw_sprite == 149 || raw_sprite == 185) { // guard any/med/hard patrolling north
+                image_draw_image(img, col * 64, line * 64, sprites[125 - 64]);
+            } else if (raw_sprite == 114 || raw_sprite == 150 || raw_sprite == 186) { // guard any/med/hard patrolling west
+                image_draw_image(img, col * 64, line * 64, sprites[123 - 64]);
+            } else if (raw_sprite == 115 || raw_sprite == 151 || raw_sprite == 187) { // guard any/med/hard patrolling south
+                image_draw_image(img, col * 64, line * 64, sprites[121 - 64]);
+            // -- Dog ---------------------------------------------------------
+            } else if (raw_sprite == 138) { // dog any/med/hard patrolling east
+                image_draw_image(img, col * 64, line * 64, sprites[168 - 64]);
+            } else if (raw_sprite == 139) { // dog any/med/hard patrolling north
+                image_draw_image(img, col * 64, line * 64, sprites[166 - 64]);
+            } else if (raw_sprite == 140) { // dog any/med/hard patrolling west
+                image_draw_image(img, col * 64, line * 64, sprites[164 - 64]);
+            } else if (raw_sprite == 141) { // dog any/med/hard patrolling south
+                image_draw_image(img, col * 64, line * 64, sprites[162 - 64]);
             } else if (raw_sprite != 0) { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
+                unhandled_plane1 += 1;
             }
             // Difficulty indication
-            if (raw_sprite == 144 || raw_sprite == 145 || raw_sprite == 146 || raw_sprite == 147)
+            if (raw_sprite >= 144 && raw_sprite <= 151) // guard standing and patrolling
             {
                 image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, ORANGE, false);
-            } else if (raw_sprite == 180 || raw_sprite == 181 || raw_sprite == 182 || raw_sprite == 183)
+            } else if (raw_sprite >= 180 && raw_sprite <= 187) // guard standing and patrolling
             {
                 image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, RED, false);
             }
         }
     }
+    printf("Number of tiles unhandled: %u\n", unhandled_plane1);
     return img;
 }
