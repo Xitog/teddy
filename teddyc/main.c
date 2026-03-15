@@ -361,8 +361,8 @@ int main(int argc, const char *argv[])
         "hanging_cage",     //  82
         "skeleton_in_cage", //  83
         "bones",            //  84
-        "silver_key",       //  85
-        "gold_key",         //  86
+        "gold_key",         //  85
+        "silver_key",       //  86
         "bed",              //  87
         "bucket",           //  88
         "food",             //  89

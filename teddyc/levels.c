@@ -449,23 +449,25 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             } else if (raw_sprite == 115 || raw_sprite == 151 || raw_sprite == 187) { // guard any/med/hard patrolling south
                 image_draw_image(img, col * 64, line * 64, sprites[121 - 64]);
             // -- Dog ---------------------------------------------------------
-            } else if (raw_sprite == 138) { // dog any/med/hard patrolling east
+            } else if (raw_sprite == 138 || raw_sprite == 174 || raw_sprite == 210) { // dog any/med/hard patrolling east
                 image_draw_image(img, col * 64, line * 64, sprites[168 - 64]);
-            } else if (raw_sprite == 139) { // dog any/med/hard patrolling north
+            } else if (raw_sprite == 139 || raw_sprite == 175 || raw_sprite == 211) { // dog any/med/hard patrolling north
                 image_draw_image(img, col * 64, line * 64, sprites[166 - 64]);
-            } else if (raw_sprite == 140) { // dog any/med/hard patrolling west
+            } else if (raw_sprite == 140 || raw_sprite == 176 || raw_sprite == 212) { // dog any/med/hard patrolling west
                 image_draw_image(img, col * 64, line * 64, sprites[164 - 64]);
-            } else if (raw_sprite == 141) { // dog any/med/hard patrolling south
+            } else if (raw_sprite == 141 || raw_sprite == 177 || raw_sprite == 213) { // dog any/med/hard patrolling south
                 image_draw_image(img, col * 64, line * 64, sprites[162 - 64]);
             } else if (raw_sprite != 0) { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
                 unhandled_plane1 += 1;
             }
             // Difficulty indication
-            if (raw_sprite >= 144 && raw_sprite <= 151) // guard standing and patrolling
+            if ((raw_sprite >= 144 && raw_sprite <= 151) ||
+                (raw_sprite >= 174 && raw_sprite <= 177)) // guard standing and patrolling
             {
                 image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, ORANGE, false);
-            } else if (raw_sprite >= 180 && raw_sprite <= 187) // guard standing and patrolling
+            } else if ((raw_sprite >= 180 && raw_sprite <= 187) ||
+                       (raw_sprite >= 210 && raw_sprite <= 213)) // guard standing and patrolling
             {
                 image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, RED, false);
             }

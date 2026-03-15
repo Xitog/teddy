@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+15/03/2026
+Fini l'affichage du chien. Il me manque les turning points.
+
 13/03/2026
 Ajouté le soldat patrouillant, début du chien patrouillant
 
