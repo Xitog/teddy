@@ -38,7 +38,7 @@ void display_header(const Header * header);
 bool read_header(const Data mem, Header * header);
 bool read_level_header(const Data mem, uint32_t offset, LevelHeader * lh);
 void display_level_header(const LevelHeader * lh);
-bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * output);
+//bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * output);
 bool read_plane(const LevelHeader * lhs, uint8_t level, uint8_t plane, const Data mem, uint16_t * output);
 bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, uint8_t plane);
 bool read_level_data(const Data levelDataFile, LevelHeader * level_headers, uint8_t level);

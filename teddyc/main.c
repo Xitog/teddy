@@ -17,6 +17,9 @@
 #include <math.h> // round
 #include <ctype.h> // isdigit
 
+#include ".\libraries\miniz.h"
+#include ".\libraries\spng.h"
+
 #include "common.h"
 #include "levels.h"
 #include "assets.h"
@@ -422,13 +425,12 @@ int main(int argc, const char *argv[])
     // Level export to bmp
     //-------------------------------------------------------------------------
 
+    Image * level_image = NULL;
     if (EXPORT_LEVEL_TO_BMP)
     {
         Level lvl = create_level_from_files(levelDataFile, level_headers, 0);
-        Image * img = level_to_image(lvl, ALL_PLANES, textures, sprites);
-        //export_plane_to_txt(lvl, 0);
-        image_save_to_bmp(img, "level0.bmp");
-        image_free(img);
+        level_image = level_to_image(lvl, ALL_PLANES, textures, sprites);
+        image_save_to_bmp(level_image, "level0.bmp");
     }
 
     getBuildInfo();
@@ -445,11 +447,88 @@ int main(int argc, const char *argv[])
     image_draw_digit(img, 80, 50, 1, MAGENTA);
     image_save_to_bmp(img, "textX.bmp");
 
+    // MiniZ
+
+    static const char * source = "Blood and money. Blood and money. Blood and money. Blood and money. Blood and money. Blood and money.";
+    printf("Version of miniz.c : %s\n", MZ_VERSION);
+    uint64_t src_len = (uint64_t)strlen(source);
+    uint64_t cmp_len = compressBound(src_len);
+    uint8_t * cmp_data = (uint8_t *) malloc((size_t)cmp_len);
+    int cmp_status = compress(cmp_data, (mz_ulong *) &cmp_len, (const unsigned char *)source, src_len);
+    if (cmp_status != Z_OK)
+    {
+      printf("compress() failed!\n");
+      free(cmp_data);
+    }
+    printf("Compressed from %llu to %llu bytes\n", (uint64_t)src_len, (uint64_t)cmp_len);
+
+    // Mon PNG
+
+    image_save_to_png(level_image, "outputX.png");
+
+    // SPNG
+
+    #ifdef SPNGTEST
+
+    size_t length = image_get_size(level_image);
+    printf("image size = %zu\n", length);
+
+    /* zero-initialize to set valid defaults */
+    struct spng_ihdr ihdr = {0};
+
+    /* Creating an encoder context requires a flag */
+    spng_ctx *ctx = spng_ctx_new(SPNG_CTX_ENCODER);
+
+    /* Encode to internal buffer managed by the library */
+    spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
+
+    //FILE * output_png = fopen("outputX.png", "wb");
+    //spng_set_png_file(ctx, output_png);
+
+    // https://www.w3.org/TR/2003/REC-PNG-20031110/#table111
+    ihdr.width = level_image->width;
+    ihdr.height = level_image->height;
+    ihdr.color_type = SPNG_COLOR_TYPE_TRUECOLOR;
+    ihdr.bit_depth = 8;
+
+    spng_set_ihdr(ctx, &ihdr);
+
+    /* SPNG_FMT_PNG is a special value for source format that matches the format in ihdr */
+    /* SPNG_ENCODE_FINALIZE will finalize the PNG with the end-of-file marker */
+    int ret = 0; //spng_encode_image(ctx, level_image->rows, length, SPNG_FMT_PNG, SPNG_ENCODE_FINALIZE);
+
+    if (ret)
+    {
+        printf("spng_encode_image() error: %s\n", spng_strerror(ret));
+        spng_ctx_free(ctx);
+    } else {
+        size_t png_size;
+        void *png_buf = NULL;
+
+        /* Get the internal buffer of the finished PNG */
+        png_buf = spng_get_png_buffer(ctx, &png_size, &ret);
+
+        if (png_buf == NULL)
+        {
+            printf("spng_get_png_buffer() error: %s\n", spng_strerror(ret));
+        }
+        free(png_buf);
+    }
+    //fclose(output_png);
+    #endif
+
+    // Console
+
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(console, FOREGROUND_GREEN);
     printf("Good");
     SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE); // white
     printf("bye\n");
+
+    if (EXPORT_LEVEL_TO_BMP && level_image != NULL)
+    {
+        image_free(level_image);
+    }
 
     return EXIT_SUCCESS;
 }

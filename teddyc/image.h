@@ -38,6 +38,8 @@ void image_safe_set_pixel(Image * img, int32_t x, int32_t y, Pixel color);
 void image_set_pixel(Image * img, uint32_t x, uint32_t y, Pixel color);
 void image_fill(Image * img, Pixel color);
 void image_save_to_bmp(Image * img, const char * file_path);
+void image_save_to_png(Image * img, const char * file_path);
 void image_free(Image * img);
+uint32_t image_get_size(Image * img);
 
 #endif

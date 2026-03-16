@@ -205,7 +205,7 @@ void image_save_to_bmp(Image *img, const char *file_path)
     memcpy(header + 26, &biPlanes, 2);
     memcpy(header + 28, &bitcount, 2);
     memcpy(header + 34, &imagesize, 4);
-    // Write
+    // Writing file
     FILE *f = fopen(file_path, "wb");
     if (f == NULL)
     {
@@ -219,6 +219,113 @@ void image_save_to_bmp(Image *img, const char *file_path)
     printf("Saved at : %s\n", file_path);
 }
 
+void image_save_to_png(Image *img, const char *file_path)
+{
+    // PNG signature
+    uint8_t signature[8] = {0};
+    signature[0] = 0x89;
+    signature[1] = 0x50; // P in ASCII
+    signature[2] = 0x4E; // N in ASCII
+    signature[3] = 0x47; // G in ASCII
+    signature[4] = 0x0D; // CR
+    signature[5] = 0x0A; // LF (CRLF = DOS line ending)
+    signature[6] = 0x1A; // DOS end of file
+    signature[7] = 0x0A; // LF (UNIX line ending)
+    printf("Signature OK\n");
+    // IHDR = image header
+    // IHDR - LENGTH (4)
+    uint32_t length = _byteswap_ulong(13); // 00 00 00 0D;
+    // IHDR - CHUNK TYPE (4)
+    uint8_t type[4] = {'I', 'H', 'D', 'R'}; // 49 48 44 52
+    uint32_t width = _byteswap_ulong(1);
+    uint32_t height = _byteswap_ulong(1);
+    uint8_t bits_per_channel = 8;
+    uint8_t color_type = 2;
+    uint8_t compression_method = 0;
+    uint8_t filter_method = 0;
+    uint8_t interlaced = 0;
+    // IHDR - CRC (4)
+    uint32_t crc = _byteswap_ulong(0x907753DE);
+    // Writing to buffer
+    uint32_t idhr_length = 4 + 4 + 13 + 4;
+    uint8_t idhr[4 + 4 + 13 + 4] = {0};
+    memcpy(idhr, &length, 4);
+    memcpy(idhr + 4, &type, 4);
+    memcpy(idhr + 8, &width, 4);
+    memcpy(idhr + 12, &height, 4);
+    memcpy(idhr + 16, &bits_per_channel, 1);
+    memcpy(idhr + 17, &color_type, 1);
+    memcpy(idhr + 18, &compression_method, 1);
+    memcpy(idhr + 19, &filter_method, 1);
+    memcpy(idhr + 20, &interlaced, 1);
+    memcpy(idhr + 21, &crc, 4);
+    printf("IHDR OK\n");
+    // IDAT
+    // IDAT - LENGTH (4)
+    length = _byteswap_ulong(12); // 00 00 00 0C
+    // IDAT - CHUNK TYPE (4)
+    type[0] = 'I'; // 49
+    type[1] = 'D'; // 44
+    type[2] = 'A'; // 41
+    type[3] = 'T'; // 54
+    // IDAT - DATA (12)
+    compression_method = 0x08;
+    uint8_t * data = malloc(sizeof(uint8_t) * 6);
+    data[0] = 0x63;
+    data[1] = 0xF8;
+    data[2] = 0xCF;
+    data[3] = 0xC0;
+    data[4] = 0x00;
+    data[5] = 0x00;
+    uint8_t fcheck = 0xD7;
+    uint32_t adler32 = _byteswap_ulong(0x03010100);
+    // IDAT - CRC (4)
+    crc = _byteswap_ulong(0x18DD8DB0);
+    // Writing to buffer
+    uint32_t idat_length = 4 + 4 + 12 + 4;
+    uint8_t idat[4 + 4 + 12 + 4] = {0};
+    memcpy(idat, &length, 4);
+    memcpy(idat + 4, &type, 4);
+    memcpy(idat + 8, &compression_method, 1);
+    memcpy(idat + 9, &fcheck, 1);
+    memcpy(idat + 10, data, 6);
+    memcpy(idat + 16, &adler32, 4);
+    memcpy(idat + 20, &crc, 4);
+    printf("IDAT OK\n");
+    // IEND
+    // IEND - LENGTH (4)
+    length = 0;
+    // IEND - CHUNK TYPE (4)
+    type[0] = 'I'; // 49
+    type[1] = 'E'; // 45
+    type[2] = 'N'; // 4E
+    type[3] = 'D'; // 44
+    // IEND - CRC (4)
+    crc = _byteswap_ulong(0xAE426082);
+    // Writing to buffer
+    uint32_t iend_length = 4 + 4 + 0 + 4;
+    uint8_t iend[4 + 4 + 0 + 4] = {0};
+    memcpy(iend, &length, 4);
+    memcpy(iend + 4, &type, 4);
+    memcpy(iend + 8, &crc, 4);
+    printf("IDEND OK\n");
+    // Cleaning
+    free(data);
+    // Writing file
+    FILE *f = fopen(file_path, "wb");
+    if (f == NULL)
+    {
+        printf("ERROR: Unable to open file %s for writing.\n", file_path);
+        return;
+    }
+    fwrite(signature, 1, 8, f);
+    fwrite(idhr, 1, idhr_length, f);
+    fwrite(idat, 1, idat_length, f);
+    fwrite(iend, 1, iend_length, f);
+    fclose(f);
+    printf("Saved at : %s\n", file_path);
+}
+
 void image_free(Image *img)
 {
     for (int i = 0; i < img->height; i++)
@@ -226,4 +333,9 @@ void image_free(Image *img)
         free(img->rows[i]);
     }
     free(img->rows);
+}
+
+uint32_t image_get_size(Image * img)
+{
+    return img->width * img->width * sizeof(Pixel);
 }
