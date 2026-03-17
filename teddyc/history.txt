@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+17/03/2026
+Calcul du CRC32.
+
 16/03/2026
 Essai de MiniZ ok. Essai de SPNG ko. Premier fichier "en dur" PNG écrit.
 
@@ -135,3 +138,5 @@ https://vgmaps.de/maps/pc/wolfenstein-3-d.php Isometric maps rendered by DarkWol
 https://www.gamedeveloper.com/design/classic-tools-retrospective-john-romero-talks-about-creating-ted-the-tile-editor-that-shipped-over-30-games
 
 https://github.com/HiPhish/Wolf3DExtract CLI tool for extracting assets from Wolfenstein 3D for PC
+
+https://www.w3.org/TR/png/#D-CRCAppendix CRC32 in C

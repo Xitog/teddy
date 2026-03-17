@@ -33,21 +33,23 @@ void image_draw_digit(Image *dest, uint32_t x, uint32_t y, uint8_t digit, Pixel 
 {
     if (digit == 0)
     {
-        image_draw_line(dest, x, y, x + 5, y, color);          // down
-        image_draw_line(dest, x, y, x, y - 7, color);          // left
-        image_draw_line(dest, x, y - 7, x + 5, y - 7, color);  // up
-        image_draw_line(dest, x + 5, y, x + 5, y - 7, color);  // right
-        image_draw_line(dest, x, y, x + 5, y - 7, color);      // diag
-    } else if (digit == 1) {
-        image_draw_line(dest, x, y, x + 5, y, color);          // base
-        image_draw_line(dest, x + 3, y, x + 3, y - 7, color);  // hamp
-        image_draw_line(dest, x + 3, y - 7, x, y - 3, color);  // diag
+        image_draw_line(dest, x, y, x + 5, y, color);         // down
+        image_draw_line(dest, x, y, x, y - 7, color);         // left
+        image_draw_line(dest, x, y - 7, x + 5, y - 7, color); // up
+        image_draw_line(dest, x + 5, y, x + 5, y - 7, color); // right
+        image_draw_line(dest, x, y, x + 5, y - 7, color);     // diag
+    }
+    else if (digit == 1)
+    {
+        image_draw_line(dest, x, y, x + 5, y, color);         // base
+        image_draw_line(dest, x + 3, y, x + 3, y - 7, color); // hamp
+        image_draw_line(dest, x + 3, y - 7, x, y - 3, color); // diag
     }
 }
 
 void image_draw_line(Image *dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, Pixel color)
 {
-    //printf("x1=%u y1=%u x2=%u y2=%u\n", x1, y1, x2, y2);
+    // printf("x1=%u y1=%u x2=%u y2=%u\n", x1, y1, x2, y2);
     if (y2 == y1)
     {
         if (y1 >= 0 && y1 < dest->height)
@@ -88,27 +90,29 @@ void image_draw_line(Image *dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_
             uint32_t mod_x = (x1 < x2) ? 1 : -1;
             double y = y1;
             double factor = (y1 < y2) ? 1 : -1;
-            double mod_y = ((double) diff_y / (double) diff_x) * factor;
-            for (uint32_t x = x1 ; count <= diff_x ; x += mod_x, count++)
+            double mod_y = ((double)diff_y / (double)diff_x) * factor;
+            for (uint32_t x = x1; count <= diff_x; x += mod_x, count++)
             {
                 if (x >= 0 && x < dest->width && y >= 0 && y < dest->height)
                 {
-                    //printf("%u %f (as %u) %f\n", x, y, (uint32_t) round(y), mod_y);
-                    dest->rows[(uint32_t) round(y)][x] = color;
+                    // printf("%u %f (as %u) %f\n", x, y, (uint32_t) round(y), mod_y);
+                    dest->rows[(uint32_t)round(y)][x] = color;
                     y += mod_y;
                 }
             }
-        } else {
+        }
+        else
+        {
             uint32_t mod_y = (y1 < y2) ? 1 : -1;
             double x = x1;
             double factor = (x1 < x2) ? 1 : -1;
-            double mod_x = ((double) diff_x / (double) diff_y) * factor;
-            for (uint32_t y = y1 ; count <= diff_y ; y += mod_y, count++)
+            double mod_x = ((double)diff_x / (double)diff_y) * factor;
+            for (uint32_t y = y1; count <= diff_y; y += mod_y, count++)
             {
                 if (x >= 0 && x < dest->width && y >= 0 && y < dest->height)
                 {
-                    //printf("%f (as %u) %u %f\n", x, (uint32_t) round(x), y, mod_x);
-                    dest->rows[y][(uint32_t) round(x)] = color;
+                    // printf("%f (as %u) %u %f\n", x, (uint32_t) round(x), y, mod_x);
+                    dest->rows[y][(uint32_t)round(x)] = color;
                     x += mod_x;
                 }
             }
@@ -219,6 +223,34 @@ void image_save_to_bmp(Image *img, const char *file_path)
     printf("Saved at : %s\n", file_path);
 }
 
+// from https://www.w3.org/TR/png/#D-CRCAppendix
+uint32_t crc32(unsigned char * buffer, uint32_t length)
+{
+    // Init table
+    uint32_t c, crc_table[256];
+    uint16_t n, k;
+
+    for (n = 0; n < 256; n++)
+    {
+        c = (uint32_t)n;
+        for (k = 0; k < 8; k++)
+        {
+            if (c & 1)
+                c = 0xedb88320L ^ (c >> 1);
+            else
+                c = c >> 1;
+        }
+        crc_table[n] = c;
+    }
+    // Compute
+    c = 0xffffffffu;
+    for (n = 0; n < length; n++) {
+        c = crc_table[(c ^ buffer[n]) & 0xff] ^ (c >> 8);
+    }
+    printf("crc32 = %u\n", c ^ 0xffffffffu);
+    return c ^ 0xffffffffu;
+}
+
 void image_save_to_png(Image *img, const char *file_path)
 {
     // PNG signature
@@ -234,7 +266,8 @@ void image_save_to_png(Image *img, const char *file_path)
     printf("Signature OK\n");
     // IHDR = image header
     // IHDR - LENGTH (4)
-    uint32_t length = _byteswap_ulong(13); // 00 00 00 0D;
+    uint32_t length = 13;
+    uint32_t swapped_length = _byteswap_ulong(length); // 00 00 00 0D;
     // IHDR - CHUNK TYPE (4)
     uint8_t type[4] = {'I', 'H', 'D', 'R'}; // 49 48 44 52
     uint32_t width = _byteswap_ulong(1);
@@ -244,12 +277,10 @@ void image_save_to_png(Image *img, const char *file_path)
     uint8_t compression_method = 0;
     uint8_t filter_method = 0;
     uint8_t interlaced = 0;
-    // IHDR - CRC (4)
-    uint32_t crc = _byteswap_ulong(0x907753DE);
     // Writing to buffer
-    uint32_t idhr_length = 4 + 4 + 13 + 4;
+    uint32_t idhr_length = 4 + 4 + length + 4;
     uint8_t idhr[4 + 4 + 13 + 4] = {0};
-    memcpy(idhr, &length, 4);
+    memcpy(idhr, &swapped_length, 4);
     memcpy(idhr + 4, &type, 4);
     memcpy(idhr + 8, &width, 4);
     memcpy(idhr + 12, &height, 4);
@@ -258,11 +289,15 @@ void image_save_to_png(Image *img, const char *file_path)
     memcpy(idhr + 18, &compression_method, 1);
     memcpy(idhr + 19, &filter_method, 1);
     memcpy(idhr + 20, &interlaced, 1);
+    // IHDR - CRC (4) on type & content but not length
+    //uint32_t crc = _byteswap_ulong(0x907753DE);
+    uint32_t crc = _byteswap_ulong(crc32(idhr + 4, length + 4)); // ignore length, add chunck type length
     memcpy(idhr + 21, &crc, 4);
     printf("IHDR OK\n");
     // IDAT
     // IDAT - LENGTH (4)
-    length = _byteswap_ulong(12); // 00 00 00 0C
+    length = 12;
+    swapped_length = _byteswap_ulong(length); // 00 00 00 0C
     // IDAT - CHUNK TYPE (4)
     type[0] = 'I'; // 49
     type[1] = 'D'; // 44
@@ -270,7 +305,7 @@ void image_save_to_png(Image *img, const char *file_path)
     type[3] = 'T'; // 54
     // IDAT - DATA (12)
     compression_method = 0x08;
-    uint8_t * data = malloc(sizeof(uint8_t) * 6);
+    uint8_t *data = malloc(sizeof(uint8_t) * 6);
     data[0] = 0x63;
     data[1] = 0xF8;
     data[2] = 0xCF;
@@ -279,10 +314,8 @@ void image_save_to_png(Image *img, const char *file_path)
     data[5] = 0x00;
     uint8_t fcheck = 0xD7;
     uint32_t adler32 = _byteswap_ulong(0x03010100);
-    // IDAT - CRC (4)
-    crc = _byteswap_ulong(0x18DD8DB0);
     // Writing to buffer
-    uint32_t idat_length = 4 + 4 + 12 + 4;
+    uint32_t idat_length = 4 + 4 + length + 4;
     uint8_t idat[4 + 4 + 12 + 4] = {0};
     memcpy(idat, &length, 4);
     memcpy(idat + 4, &type, 4);
@@ -290,23 +323,28 @@ void image_save_to_png(Image *img, const char *file_path)
     memcpy(idat + 9, &fcheck, 1);
     memcpy(idat + 10, data, 6);
     memcpy(idat + 16, &adler32, 4);
+    // IDAT - CRC (4) on type & content but not length
+    //crc = _byteswap_ulong(0x18DD8DB0);
+    crc = _byteswap_ulong(crc32(idat + 4, length + 4)); /// ignore length, add chunck type length
     memcpy(idat + 20, &crc, 4);
     printf("IDAT OK\n");
     // IEND
     // IEND - LENGTH (4)
     length = 0;
+    swapped_length = _byteswap_ulong(length);
     // IEND - CHUNK TYPE (4)
     type[0] = 'I'; // 49
     type[1] = 'E'; // 45
     type[2] = 'N'; // 4E
     type[3] = 'D'; // 44
-    // IEND - CRC (4)
-    crc = _byteswap_ulong(0xAE426082);
     // Writing to buffer
-    uint32_t iend_length = 4 + 4 + 0 + 4;
+    uint32_t iend_length = 4 + 4 + length + 4;
     uint8_t iend[4 + 4 + 0 + 4] = {0};
-    memcpy(iend, &length, 4);
+    memcpy(iend, &swapped_length, 4);
     memcpy(iend + 4, &type, 4);
+    // IEND - CRC (4) on type & content but not length
+    // crc = _byteswap_ulong(0xAE426082);
+    crc = _byteswap_ulong(crc32(iend + 4, length + 4)); // ignore length, add chunck type length
     memcpy(iend + 8, &crc, 4);
     printf("IDEND OK\n");
     // Cleaning
@@ -335,7 +373,7 @@ void image_free(Image *img)
     free(img->rows);
 }
 
-uint32_t image_get_size(Image * img)
+uint32_t image_get_size(Image *img)
 {
     return img->width * img->width * sizeof(Pixel);
 }
