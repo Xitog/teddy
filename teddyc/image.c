@@ -305,19 +305,23 @@ void image_save_to_png(Image *img, const char *file_path)
     type[2] = 'A'; // 41
     type[3] = 'T'; // 54
     // IDAT - DATA (12)
-    compression_method = 0x08; // Obligatoire et fixe pour PNG
 
     // TEST DE COMPRESSION
     uint8_t buffer_in[4] = {0x00, 0xFF, 0x00, 0x00}; // type 0 de method filtre 0 puis un pixel rouge
+    size_t buffer_in_length = sizeof(buffer_in);
     // Le résultat doit être : 63 F8 CF C0 00 00
     uint8_t buffer_out[256] = {0};
+    size_t buffer_out_length = sizeof(buffer_out);
+
+    int status = mz_compress(buffer_out, &buffer_out_length, buffer_in, buffer_in_length);
+
     // Init the z_stream
-    z_stream stream;
+    /*z_stream stream;
     memset(&stream, 0, sizeof(stream));
     stream.next_in = buffer_in;
-    stream.avail_in = 4;
+    stream.avail_in = buffer_in_length;
     stream.next_out = buffer_out;
-    stream.avail_out = 256;
+    stream.avail_out = buffer_out_length;
     int level = Z_DEFAULT_COMPRESSION; // Z_DEFLATED; //Z_BEST_COMPRESSION;
     if (deflateInit(&stream, level) != Z_OK)
     {
@@ -326,10 +330,13 @@ void image_save_to_png(Image *img, const char *file_path)
     }
     int status = deflate(&stream, Z_FINISH);
     if (status != Z_STREAM_END)
+    */
+    if (status != Z_OK)
     {
         printf("deflate() failed!\n");
         return;
     }
+    /*
     if (deflateEnd(&stream) != Z_OK)
     {
         printf("deflateEnd() failed!\n");
@@ -338,12 +345,44 @@ void image_save_to_png(Image *img, const char *file_path)
     printf("Total input bytes: %u\n", (mz_uint32)stream.total_in);
     printf("Total output bytes: %u\n", (mz_uint32)stream.total_out);
     printf("Success.\n");
-    for (uint16_t i = 0; i < stream.total_out; i++)
+    */
+    printf("Output test 1 (%zu bytes): \n", buffer_out_length);
+    for (uint16_t i = 0; i < buffer_out_length; i++) // stream.total_out; i++)
     {
-        printf("0x%02x\n", buffer_out[i]);
+        printf("%02X\n", buffer_out[i], i);
     }
+
+    uint8_t buffer_uncompressed[256] = {0};
+    size_t buffer_uncompressed_length = sizeof(buffer_uncompressed);
+    status = mz_uncompress2(buffer_uncompressed, &buffer_uncompressed_length, buffer_out, &buffer_out_length);
+    printf("Uncompressed test 1 (%zu bytes): \n", buffer_out_length);
+    for (uint16_t i = 0; i < buffer_uncompressed_length; i++)
+    {
+        printf("0x%02x\n", buffer_uncompressed[i]);
+    }
+
+    // Test n°2
+
+    uint8_t buffer_out2[256] = {0};
+    size_t buffer_out2_length = sizeof(buffer_out2);
+    tdefl_compressor comp;
+    tdefl_init(&comp, NULL, NULL, TDEFL_WRITE_ZLIB_HEADER | TDEFL_FORCE_ALL_STATIC_BLOCKS);
+    tdefl_compress(
+        &comp,
+        buffer_in, &buffer_in_length,
+        buffer_out2, &buffer_out2_length,
+        TDEFL_FINISH
+    );
+    printf("Output test 2 (%zu bytes): \n", buffer_out2_length);
+    for (size_t i = 0; i < buffer_out2_length; i++)
+        printf("%02X\n", buffer_out2[i], i);
+    printf("\n");
+
     // FIN TEST DE COMPRESSION
 
+    /*
+    compression_method = 0x08; // Obligatoire et fixe pour PNG
+    uint8_t fcheck = 0xD7;
     uint8_t *data = malloc(sizeof(uint8_t) * 6);
     data[0] = 0x63;
     data[1] = 0xF8;
@@ -351,8 +390,8 @@ void image_save_to_png(Image *img, const char *file_path)
     data[3] = 0xC0;
     data[4] = 0x00;
     data[5] = 0x00;
-    uint8_t fcheck = 0xD7;
     uint32_t adler32 = _byteswap_ulong(0x03010100);
+
     // Writing to buffer
     uint32_t idat_length = 4 + 4 + length + 4;
     uint8_t idat[4 + 4 + 12 + 4] = {0};
@@ -364,9 +403,36 @@ void image_save_to_png(Image *img, const char *file_path)
     memcpy(idat + 16, &adler32, 4);
     // IDAT - CRC (4) on type & content but not length
     //crc = _byteswap_ulong(0x18DD8DB0);
-    crc = _byteswap_ulong(calc_crc32(idat + 4, length + 4)); /// ignore length, add chunck type length
+    */
+
+    length = buffer_out_length;
+    swapped_length = _byteswap_ulong(length);
+    uint32_t idat_length = 4 + 4 + length + 4;
+    uint8_t * idat = calloc(idat_length, sizeof(uint8_t));
+    crc = _byteswap_ulong(calc_crc32(idat + 4, length + 4)); // ignore length idat + 4, add chunck type length + 4 (avant)
+
+    // triche
+    buffer_out[0] = 0x08;
+    buffer_out[1] = 0xD7;
+    buffer_out[2] = 0x63;
+    buffer_out[3] = 0xF8;
+    buffer_out[4] = 0xCF;
+    buffer_out[5] = 0xC0;
+    buffer_out[6] = 0x00;
+    buffer_out[7] = 0x00;
+    buffer_out[8] = 0x00;
+    buffer_out[9] = 0x01;
+    buffer_out[10] = 0x01;
+    buffer_out[11] = 0x03;
+    buffer_out_length = 12;
+
+    memcpy(idat, &length, 4);
+    memcpy(idat + 4, &type, 4);
+    memcpy(idat + 8, buffer_out, buffer_out_length);
     memcpy(idat + 20, &crc, 4);
+
     printf("IDAT OK\n");
+
     // IEND
     // IEND - LENGTH (4)
     length = 0;
@@ -387,7 +453,7 @@ void image_save_to_png(Image *img, const char *file_path)
     memcpy(iend + 8, &crc, 4);
     printf("IDEND OK\n");
     // Cleaning
-    free(data);
+    //free(data);
     // Writing file
     FILE *f = fopen(file_path, "wb");
     if (f == NULL)
