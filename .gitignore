@@ -1,5 +1,6 @@
 # C obj
 teddyc/*.obj
+teddyc/*.exe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
