@@ -254,6 +254,46 @@ uint32_t calc_crc32(unsigned char * buffer, uint32_t length)
 
 void image_save_to_png(Image *img, const char *file_path)
 {
+    int fmt;
+    int ret = 0;
+    spng_ctx *ctx = NULL;
+    struct spng_ihdr ihdr = {0};
+    ctx = spng_ctx_new(SPNG_CTX_ENCODER);
+    //spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
+    FILE * f = fopen(file_path, "wb");
+    spng_set_png_file(ctx, f);
+    ihdr.width = img->width;
+    ihdr.height = img->height;
+    // https://www.w3.org/TR/2003/REC-PNG-20031110/#table111
+    ihdr.color_type = SPNG_COLOR_TYPE_TRUECOLOR;
+    ihdr.bit_depth = 8;
+    spng_set_ihdr(ctx, &ihdr);
+    fmt = SPNG_FMT_PNG; // match the format in ihdr
+    size_t buf_size = img->width * img->height * 3;
+    uint8_t *buf = malloc(sizeof(uint8_t) * buf_size);
+    uint32_t width_in_bytes = img->width * 3;
+    for (uint32_t row = 0; row < img->height; row++)
+    {
+        for (uint32_t col = 0; col < img->width; col++)
+        {
+            Pixel pixel = img->rows[row][col];
+            buf[row * width_in_bytes + col * 3 + 0] = pixel.r; // blue
+            buf[row * width_in_bytes + col * 3 + 1] = pixel.g; // green
+            buf[row * width_in_bytes + col * 3 + 2] = pixel.b; // red
+        }
+    }
+    ret = spng_encode_image(ctx, buf, buf_size, fmt, SPNG_ENCODE_FINALIZE);
+    // invalid buffer size
+    if (ret)
+    {
+        printf("spng_encode_image() error: %s\n", spng_strerror(ret));
+        return;
+    }
+    fclose(f);
+}
+
+void image_save_to_png2(Image *img, const char *file_path)
+{
     // PNG signature
     uint8_t signature[8] = {0};
     signature[0] = 0x89;

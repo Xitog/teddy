@@ -1,5 +1,16 @@
 Wolf3dData Project History and links
 
+20/03/2026
+J'arrive à produire un PNG avec SPNG :-)
+Pour comprendre :
+https://github.com/randy408/libspng/blob/master/examples/example.c#L163
+
+19/03/2026
+J'essaye de produire un PNG à la main.
+
+18/03/2026
+J'essaye de produire un PNG à la main.
+
 17/03/2026
 Calcul du CRC32.
 
@@ -10,10 +21,10 @@ Essai de MiniZ ok. Essai de SPNG ko. Premier fichier "en dur" PNG écrit.
 Fini l'affichage du chien. Listé les valeurs du Plane 1. Il me manque les turning points.
 
 13/03/2026
-Ajouté le soldat patrouillant, début du chien patrouillant
+Ajouté le soldat patrouillant, début du chien patrouillant.
 
 11/03/2026
-Ecriture en couleur dans la console
+Ecriture en couleur dans la console.
 
 07/03/2026
 Indication du niveau de difficulté des gardes standing avec un rectangle orange si medium ou rouge is hard.
@@ -83,7 +94,11 @@ J’essaye de sortir le niveau au format BMP, mais c dur… + struct Level
 
 20/01/25
 Je sors tous les murs au format PPM et BMP (first !) en C.
-C::wall4.ppm = Lua::tex5.ppm. Bug dans la bibliothèque PNG, dommage elle était simple
+C::wall4.ppm = Lua::tex5.ppm. Bug* dans la bibliothèque PNG, dommage elle était simple
+Pour comprendre le BMP :
+https://stackoverflow.com/questions/50090500/create-simple-bitmap-in-c-without-external-libraries
+*Je dois mal m'en servir en fait en constituant mon pixel. Mais la lib ne compresse pas !
+https://github.com/misc0110/libattopng
 
 19/01/25
 Début de lecture du fichier VSWAP, je commence par le header
@@ -140,3 +155,6 @@ https://www.gamedeveloper.com/design/classic-tools-retrospective-john-romero-tal
 https://github.com/HiPhish/Wolf3DExtract CLI tool for extracting assets from Wolfenstein 3D for PC
 
 https://www.w3.org/TR/png/#D-CRCAppendix CRC32 in C
+
+https://www.w3.org/TR/2003/REC-PNG-20031110/#table111
+Combinaison image type and allowed pixel depth

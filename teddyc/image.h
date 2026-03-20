@@ -6,6 +6,7 @@
 #include <stdlib.h> // malloc, memcpy, free
 #include <stdbool.h> // bool
 #include <math.h>
+#include ".\libraries\spng.h"
 
 typedef struct PixelStructure {
     uint8_t r;
