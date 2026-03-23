@@ -1,5 +1,10 @@
 Wolf3dData Project History and links
 
+23/03/2026
+Meilleur encadrement des sprites pour indiquer leur niveau de difficulté
+Affichage sans la grille
+Affichage avec des murs fins (non répétition des murs inutiles)
+
 20/03/2026
 J'arrive à produire un PNG avec SPNG :-)
 Pour comprendre :

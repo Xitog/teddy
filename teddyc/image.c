@@ -150,6 +150,11 @@ void image_draw_rect(Image *img, uint32_t x, uint32_t y, uint32_t width, uint32_
     }
 }
 
+void image_draw_rect2(Image * img, Rect rect, Pixel color, bool filled)
+{
+    image_draw_rect(img, rect.x, rect.y, rect.width, rect.height, color, filled);
+}
+
 void image_safe_set_pixel(Image *img, int32_t x, int32_t y, Pixel color)
 {
     if (x >= 0 && x < img->width && y >= 0 && y <= img->height)
@@ -172,6 +177,43 @@ void image_fill(Image *img, Pixel color)
             img->rows[i][j] = color;
         }
     }
+}
+
+Rect image_get_visible_rectangle(Image *img, Pixel emptyColor, uint32_t space)
+{
+    uint32_t min_x = img->width;
+    uint32_t max_x = 0;
+    uint32_t min_y = img->height;
+    uint32_t max_y = 0;
+    for (int i = 0; i < img->height; i++)
+    {
+        for (int j = 0; j < img->width; j++)
+        {
+            if (img->rows[i][j].r != emptyColor.r || img->rows[i][j].g != emptyColor.g || img->rows[i][j].b != emptyColor.b)
+            {
+                if (i < min_y)
+                {
+                    min_y = i;
+                }
+                if (i > max_y)
+                {
+                    max_y = i;
+                }
+                if (j < min_x)
+                {
+                    min_x = j;
+                }
+                if (j > max_x)
+                {
+                    max_x = j;
+                }
+            }
+        }
+    }
+    Rect rect = {.x = min_x - space, .y = min_y - space,
+        .width = (max_x + space) - (min_x - space) + 1,
+        .height = (max_y + space) - (min_y - space) + 1};
+    return rect;
 }
 
 void image_save_to_bmp(Image *img, const char *file_path)

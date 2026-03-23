@@ -428,8 +428,10 @@ int main(int argc, const char *argv[])
     Image * level_image = NULL;
     if (EXPORT_LEVEL_TO_BMP)
     {
+        bool NO_GRID = false;
+        bool THIN_WALL = true;
         Level lvl = create_level_from_files(levelDataFile, level_headers, 0);
-        level_image = level_to_image(lvl, ALL_PLANES, textures, sprites);
+        level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
         image_save_to_bmp(level_image, "level0.bmp");
         image_save_to_png(level_image, "level0.png");
     }
@@ -475,6 +477,28 @@ int main(int argc, const char *argv[])
     {
         image_free(level_image);
     }
+
+    // Visible rect
+    Image * guard = sprites[119 - 64];
+    Image * dog = sprites[168 - 64];
+    Image * dg1 = image_new(128, 128);
+    image_fill(dg1, WHITE);
+    image_draw_image(dg1, 0, 0, dog);
+
+    Rect rect = image_get_visible_rectangle(guard, MAGENTA, 0);
+    printf("Rect guard, no spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
+    rect = image_get_visible_rectangle(guard, MAGENTA, 2);
+    printf("Rect guard, 02 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
+    rect = image_get_visible_rectangle(dog, MAGENTA, 0);
+    printf("Rect dog,   no spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
+    rect = image_get_visible_rectangle(dog, MAGENTA, 1);
+    printf("Rect dog,   01 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
+    image_draw_rect(dg1, rect.x, rect.y, rect.width, rect.height, ORANGE, false);
+    rect = image_get_visible_rectangle(dog, MAGENTA, 2);
+    printf("Rect dog,   02 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
+    image_draw_rect(dg1, rect.x, rect.y, rect.width, rect.height, RED, false);
+    image_save_to_bmp(dg1, "dg1.bmp");
+    image_free(dg1);
 
     return EXIT_SUCCESS;
 }
