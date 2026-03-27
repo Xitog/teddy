@@ -9,13 +9,13 @@
 // First sprite (= number of walls) : 64
 // First sound (= number of sprites + wall) : 452 (452 - 64 = 388 sprites)
 
-#include <stdlib.h> // EXIT_SUCCESS, malloc
-#include <stdio.h>  // printf, fopen, fread, fclose, fseek, ftell, rewind, SEEK_END
-#include <string.h> // memcpy
-#include <stdint.h> // int32_t
+#include <stdlib.h>  // EXIT_SUCCESS, malloc
+#include <stdio.h>   // printf, fopen, fread, fclose, fseek, ftell, rewind, SEEK_END
+#include <string.h>  // memcpy
+#include <stdint.h>  // int32_t
 #include <stdbool.h> // bool
-#include <math.h> // round
-#include <ctype.h> // isdigit
+#include <math.h>    // round
+#include <ctype.h>   // isdigit
 
 #include ".\libraries\miniz.h"
 #include ".\libraries\spng.h"
@@ -26,9 +26,11 @@
 #include "image.h"
 #include "os.h"
 
-const char * HEADER_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPHEAD.WL1";
-const char * LEVEL_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPTEMP.WL1";
-const char * ASSET_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\VSWAP.WL1";
+const char *TEDDY_VERSION = "0.1a";
+
+const char *HEADER_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPHEAD.WL1";
+const char *LEVEL_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPTEMP.WL1";
+const char *ASSET_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\VSWAP.WL1";
 
 const uint8_t ALL_PLANES = 3;
 
@@ -50,13 +52,13 @@ void first_five_pixel(const Data assetDataFile, AssetHeader assetHeader, uint16_
     }
 }
 
-void to_matrix(const Data assetDataFile, uint32_t offset, uint16_t length, uint8_t ** rotated_matrix)
+void to_matrix(const Data assetDataFile, uint32_t offset, uint16_t length, uint8_t **rotated_matrix)
 {
     uint32_t x = 0;
     uint32_t y = 0;
     for (uint32_t i = 0; i < length; i++)
     {
-        //printf("Access to: x=%u y=%u put in i=%u (len = %u)\n", x, y, i, len);
+        // printf("Access to: x=%u y=%u put in i=%u (len = %u)\n", x, y, i, len);
         uint8_t pixel = assetDataFile.data[offset + i]; // rotation horizontale i + 64 * y ---
         rotated_matrix[x][y] = pixel;
         x += 1;
@@ -72,7 +74,7 @@ bool wall_to_ppm(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
 {
     char file_name[255];
     sprintf(file_name, "wall%u.ppm", index);
-    FILE * file = fopen(file_name, "w");
+    FILE *file = fopen(file_name, "w");
     fprintf(file, "P3\n# ASCII PPM file\n64 64\n255\n\n");
     uint32_t offset = assetHeader.pointers[index];
     uint16_t length = assetHeader.lengths[index];
@@ -82,13 +84,13 @@ bool wall_to_ppm(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     }
     printf("Wall texture %u : %u ptr %u len\n", index, offset, length);
     uint8_t rotated_matrix[64][64];
-    //to_matrix(assetDataFile, ptr, len, (uint8_t **)rotated_matrix);
+    // to_matrix(assetDataFile, ptr, len, (uint8_t **)rotated_matrix);
 
     uint32_t x = 0;
     uint32_t y = 0;
     for (uint32_t i = 0; i < length; i++)
     {
-        //printf("Access to: x=%u y=%u put in i=%u (len = %u)\n", x, y, i, len);
+        // printf("Access to: x=%u y=%u put in i=%u (len = %u)\n", x, y, i, len);
         uint8_t pixel = assetDataFile.data[offset + i]; // rotation horizontale i + 64 * y ---
         rotated_matrix[x][y] = pixel;
         x += 1;
@@ -124,7 +126,7 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
         return true;
     }
     printf("Wall texture %u : %u ptr %u len\n", index, ptr, len);
-    //libattopng_t *wall = libattopng_new(64, 64, PNG_RGB);
+    // libattopng_t *wall = libattopng_new(64, 64, PNG_RGB);
     uint32_t count = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -132,10 +134,10 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     {
         uint8_t pixel = assetDataFile.data[i];
         count += 1;
-        //printf("%u. %u\n", count, pixel);
-        //uint32_t rgb = (palette[pixel][0] << 24) | (palette[pixel][1] << 16) | (palette[pixel][2] << 8);
+        // printf("%u. %u\n", count, pixel);
+        // uint32_t rgb = (palette[pixel][0] << 24) | (palette[pixel][1] << 16) | (palette[pixel][2] << 8);
         uint32_t rgb = palette[pixel][0] + palette[pixel][1] * 255 + palette[pixel][2] * 255 * 255;
-        //libattopng_set_pixel(wall, y, x, rgb);
+        // libattopng_set_pixel(wall, y, x, rgb);
         x += 1;
         if (x == 64)
         {
@@ -145,14 +147,14 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     }
     char file_name[255];
     sprintf(file_name, "wall%u.png", index);
-    //libattopng_save(wall, file_name);
-    //libattopng_destroy(wall);
+    // libattopng_save(wall, file_name);
+    // libattopng_destroy(wall);
     return true;
 }
 
-bool is_str_digit(const char * s)
+bool is_str_digit(const char *s)
 {
-    for (int32_t i=0; i < strlen(s); i++)
+    for (int32_t i = 0; i < strlen(s); i++)
     {
         if (isdigit(s[i]) == 0)
         {
@@ -162,11 +164,11 @@ bool is_str_digit(const char * s)
     return true;
 }
 
-int32_t str_to_digit(const char * s)
+int32_t str_to_digit(const char *s)
 {
     int32_t res = 0;
     int32_t dec = 1;
-    for (int32_t i=strlen(s)-1; i >= 0; i--)
+    for (int32_t i = strlen(s) - 1; i >= 0; i--)
     {
         res += dec * (s[i] - '0');
         dec *= 10;
@@ -174,71 +176,22 @@ int32_t str_to_digit(const char * s)
     return res;
 }
 
+bool str_is(const char *value, const char *expected)
+{
+    return strcmp(value, expected) == 0;
+}
+
+const bool EXPORT_PLANE_TO_TEXT = false;
+const bool EXPORT_ALL_SPRITES = false;
+
 int main(int argc, const char *argv[])
 {
-    //-------------------------------------------------------------------------
-    // Switchs
-    //-------------------------------------------------------------------------
+    // -- Variables ---------------------------------------------------------------------
 
-    const bool EXPORT_PLANE_TO_TEXT = false;
-    const bool EXPORT_ALL_SPRITES = false;
-    const bool EXPORT_ALL_WALLS = false;
-    const bool EXPORT_LEVEL_TO_BMP = true;
-    bool RUN_STAT = false;
-    uint32_t TARGET = 0;
-    bool ORDER_BY_COUNT = false;
+    uint32_t level_index = 0;
+    bool order_by_count = false;
 
-    //-------------------------------------------------------------------------
-    // Commands
-    //-------------------------------------------------------------------------
-    // id : identify game and version
-    // list : list all recognized files
-    // asset X : extract asset at index X (or all) in VSWAP in the correct format (bmp)
-    // map X F : extract map number X (or all) in F format (txt, csv or bmp)
-    // stat X : run statistics on map X
-
-    bool good = false;
-    printf("Arguments:\n");
-    for (uint8_t i = 0; i < argc; i++)
-    {
-        printf("    %02u. %s\n", i, argv[i]);
-    }
-    if (argc >= 2)
-    {
-        if (strcmp(argv[1], "stats") == 0)
-        {
-            if (argc == 2 || !is_str_digit(argv[2]))
-            {
-                printf("You must indicate a level number to run the statistics.\n");
-                good = false;
-            }
-            else
-            {
-                TARGET = str_to_digit(argv[2]);
-                printf("Running statistics on level %u\n", TARGET);
-                RUN_STAT = true;
-                good = true;
-                if (argc == 4 && strcmp(argv[3], "count_order") == 0)
-                {
-                    ORDER_BY_COUNT = true;
-                }
-            }
-        }
-        else if (strcmp(argv[1], "list") == 0)
-        {
-            printf("List all files\n");
-        }
-    }
-    /*
-    if (!good)
-    {
-        return EXIT_FAILURE;
-    }
-    */
-
-    //-------------------------------------------------------------------------
-    // Reading Level files
-    //-------------------------------------------------------------------------
+    // -- Load data (reading level files) -----------------------------------------------
 
     Data headerDataFile = {.data = NULL, .size = 0};
     bool ok = load_file(HEADER_FILE, &headerDataFile);
@@ -260,7 +213,7 @@ int main(int argc, const char *argv[])
         return EXIT_FAILURE;
     }
     // Read level headers
-    LevelHeader * level_headers = malloc(sizeof(LevelHeader) * header.number);
+    LevelHeader *level_headers = malloc(sizeof(LevelHeader) * header.number);
     printf("Level name : W x H | Plane 0 [Size] | Plane 1 [Size] | Plane 2 [Size] |\n");
     for (uint8_t i = 0; i < header.number; i++)
     {
@@ -277,72 +230,38 @@ int main(int argc, const char *argv[])
         }
     }
 
-    // Exports
-    if (EXPORT_PLANE_TO_TEXT)
-    {
-        ok = export_plane_to_txt_old(level_headers, 0, 0);
-        if (!ok)
-        {
-            return EXIT_FAILURE;
-        }
-        ok = export_plane_to_txt_old(level_headers, 0, 1);
-        if (!ok)
-        {
-            return EXIT_FAILURE;
-        }
-    }
-
-    // Stats
-    if (RUN_STAT)
-    {
-        printf("Start stat on %u\n", TARGET);
-        Level lvl = create_level_from_files(levelDataFile, level_headers, TARGET);
-        level_stat(lvl, 0, ORDER_BY_COUNT);
-    }
-
-    //-------------------------------------------------------------------------
-    // Reading Asset Data File
-    //-------------------------------------------------------------------------
+    // -- Reading Asset Data File -------------------------------------------------------
 
     Data assetDataFile = {.data = NULL, .size = 0};
     ok = load_file(ASSET_FILE, &assetDataFile);
     AssetHeader assetHeader;
     ok = read_asset_header(assetDataFile, &assetHeader);
-    printf("Number of assets : %u\n", assetHeader.number); // 538
-    printf("First sprite (= number of wall) : %d\n", assetHeader.first_sprite); // 64
+    printf("Number of assets : %u\n", assetHeader.number);                              // 538
+    printf("First sprite (= number of wall) : %d\n", assetHeader.first_sprite);         // 64
     printf("First sound (= number of sprites + wall) : %d\n", assetHeader.first_sound); // 452 (- 64 = 388)
     printf("Number of walls : %u\n", assetHeader.first_sprite);
     printf("Number of sprites : %u\n", assetHeader.first_sound - assetHeader.first_sprite);
 
-    //-------------------------------------------------------------------------
-    // Walls
-    //-------------------------------------------------------------------------
+    // -- Walls -------------------------------------------------------------------------
 
-    // Making images for all wall textures and [save them to bmp]
-    Image ** textures;
-    textures = malloc(sizeof(Image *) * assetHeader.first_sprite);
+    // Making images for all wall textures
+    Image **textures;
+    uint16_t number_of_walls = assetHeader.first_sprite;
+    textures = malloc(sizeof(Image *) * number_of_walls);
     char file_name[255];
-    for (uint32_t i = 0; i < assetHeader.first_sprite; i++)
+    for (uint32_t i = 0; i < number_of_walls; i++)
     {
-        Image * img = wall_to_image(assetDataFile, assetHeader, i);
+        Image *img = wall_to_image(assetDataFile, assetHeader, i);
         textures[i] = NULL;
         if (img != NULL)
         {
-            if (EXPORT_ALL_WALLS)
-            {
-                sprintf(file_name, ".\\walls\\%02u_wall.bmp", i);
-                image_save_to_bmp(img, file_name);
-            }
             textures[i] = img;
-            // wall_to_ppm...
         }
     }
 
-    //-------------------------------------------------------------------------
-    // Sprites
-    //-------------------------------------------------------------------------
+    // -- Sprites -----------------------------------------------------------------------
 
-    const char * name[] = {
+    const char *name[] = {
         "demo",             //  64
         "puddle",           //  65
         "green_barrel",     //  66
@@ -394,7 +313,7 @@ int main(int argc, const char *argv[])
         "x_m5",             // 112 x
     };
     const uint8_t max_named_sprites = 112; // 113 est le premier guard
-    Image ** sprites;
+    Image **sprites;
     sprites = malloc(sizeof(Image *) * assetHeader.first_sound - assetHeader.first_sprite);
 
     for (uint16_t i = assetHeader.first_sprite; i < assetHeader.first_sound; i++)
@@ -402,7 +321,7 @@ int main(int argc, const char *argv[])
 #ifdef DEBUG
         printf("Exporting sprite #%u named %s\n", i, name[i - assetHeader.first_sprite]);
 #endif
-        Image * img = sprite_to_image(assetDataFile, assetHeader, i);
+        Image *img = sprite_to_image(assetDataFile, assetHeader, i);
         sprites[i - assetHeader.first_sprite] = img;
         if (img != NULL)
         {
@@ -421,29 +340,189 @@ int main(int argc, const char *argv[])
         }
     }
 
-    //-------------------------------------------------------------------------
-    // Level export to bmp
-    //-------------------------------------------------------------------------
+    // -- Commands ----------------------------------------------------------------------
 
-    Image * level_image = NULL;
-    if (EXPORT_LEVEL_TO_BMP)
+    // id : identify game and version
+    // list : list all recognized files
+    // asset X : extract asset at index X (or all) in VSWAP in the correct format (bmp)
+    // map X F : extract map number X (or all) in F format (txt, csv or bmp)
+    // stats X ou count X : run statistics on map X
+    // extract walls : extract all walls
+
+    bool good = false;
+    if (argc == 1 || (argc == 2 && str_is(argv[1], "help")))
     {
-        bool NO_GRID = false;
-        bool THIN_WALL = true;
-        Level lvl = create_level_from_files(levelDataFile, level_headers, 0);
-        level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
-        image_save_to_bmp(level_image, "level0.bmp");
-        image_save_to_png(level_image, "level0.png");
+        printf("---------------------------------\n");
+        printf("- Teddy v%s\n", TEDDY_VERSION);
+        printf("---------------------------------\n");
+        printf("Help menu:\n");
+        printf("info <level>          : map information\n");
+        printf("count <level>         : count of map objects\n");
+        printf("extract walls         : extract all walls\n");
+        printf("export <level> <type> : export a level to <type> (png, bmp or all)\n");
+        good = true;
+    }
+    else if (argc >= 2)
+    {
+        if (str_is(argv[1], "info"))
+        {
+            if (argc == 2 || !is_str_digit(argv[2]))
+            {
+                printf("You must indicate a level number to get information.\n");
+                good = false;
+            }
+            else
+            {
+                level_index = str_to_digit(argv[2]);
+                good = true;
+                printf("Getting information on level %u\n", level_index);
+                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                level_info(lvl);
+            }
+        }
+        else if (str_is(argv[1], "count"))
+        {
+            if (argc == 2 || !is_str_digit(argv[2]))
+            {
+                printf("You must indicate a level number to run the statistics.\n");
+                good = false;
+            }
+            else
+            {
+                level_index = str_to_digit(argv[2]);
+                good = true;
+                if (argc == 4 && str_is(argv[3], "count_order"))
+                {
+                    order_by_count = true;
+                }
+                printf("Running statistics on level %u\n", level_index);
+                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                level_stat(lvl, 0, order_by_count);
+            }
+        }
+        else if (str_is(argv[1], "extract"))
+        {
+            if (argc == 2)
+            {
+                printf("You must indicate which asset to extract :\n-walls for all wall.\n");
+                good = false;
+            }
+            else if (str_is(argv[2], "walls"))
+            {
+                for (uint16_t i = 0; i < number_of_walls; i++)
+                {
+                    if (textures[i] != NULL)
+                    {
+                        sprintf(file_name, ".\\walls\\%02u_wall.bmp", i);
+                        // image_save_to_bmp(textures[i], file_name);
+                        printf("[%u / %u] Saving to %s\n", i, number_of_walls, file_name);
+                    }
+                }
+            }
+        }
+        else if (str_is(argv[1], "export"))
+        {
+            if (argc == 2)
+            {
+                printf("You must indicate a level number to export.\n");
+                good = false;
+            }
+            else
+            {
+                bool png = false;
+                bool bmp = true;
+                if (argc == 4)
+                {
+                    if (str_is(argv[3], "png"))
+                    {
+                        png = true;
+                        bmp = false;
+                    }
+                    else if (str_is(argv[3], "bmp"))
+                    {
+                        png = false;
+                        bmp = true;
+                    }
+                    else if (str_is(argv[3], "all"))
+                    {
+                        png = true;
+                        bmp = true;
+                    }
+                }
+                level_index = str_to_digit(argv[2]);
+                good = true;
+                printf("Exporting level %u\n", level_index);
+                Image *level_image = NULL;
+                bool NO_GRID = false;
+                bool THIN_WALL = true;
+                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
+                if (level_image != NULL)
+                {
+                    if (bmp)
+                    {
+                        sprintf(file_name, "level%u.bmp", level_index);
+                        image_save_to_bmp(level_image, file_name);
+                    }
+                    if (png)
+                    {
+                        sprintf(file_name, "level%u.png", level_index);
+                        image_save_to_png(level_image, file_name);
+                    }
+                    image_free(level_image);
+                }
+            }
+        }
+        else if (str_is(argv[1], "list"))
+        {
+            printf("List all files\n");
+        }
+    }
+    // Console
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (!good)
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_RED);
+        printf("Goodbye\n");
+        SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_GREEN); // | FOREGROUND_GREEN | FOREGROUND_BLUE); // white
+        printf("Goodbye\n");
+        SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        return EXIT_SUCCESS;
     }
 
+
+
+
+    // Exports
+    if (EXPORT_PLANE_TO_TEXT)
+    {
+        ok = export_plane_to_txt_old(level_headers, 0, 0);
+        if (!ok)
+        {
+            return EXIT_FAILURE;
+        }
+        ok = export_plane_to_txt_old(level_headers, 0, 1);
+        if (!ok)
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+
+
     getBuildInfo();
-    char * cwd = getCurrentDir();
+    char *cwd = getCurrentDir();
     printf("Current dir is : %s\n", cwd);
     getFiles(cwd);
     printf("\n-----------------------------------------\n");
     getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
 
-    Image * img = image_new(100, 100);
+    Image *img = image_new(100, 100);
     image_draw_line(img, 0, 0, 99, 99, RED);
     image_draw_line(img, 0, 99, 99, 0, GREEN);
     image_draw_digit(img, 70, 50, 0, BLUE);
@@ -452,36 +531,23 @@ int main(int argc, const char *argv[])
 
     // MiniZ
 
-    static const char * source = "Blood and money. Blood and money. Blood and money. Blood and money. Blood and money. Blood and money.";
+    static const char *source = "Blood and money. Blood and money. Blood and money. Blood and money. Blood and money. Blood and money.";
     printf("Version of miniz.c : %s\n", MZ_VERSION);
     uint64_t src_len = (uint64_t)strlen(source);
     uint64_t cmp_len = compressBound(src_len);
-    uint8_t * cmp_data = (uint8_t *) malloc((size_t)cmp_len);
-    int cmp_status = compress(cmp_data, (mz_ulong *) &cmp_len, (const unsigned char *)source, src_len);
+    uint8_t *cmp_data = (uint8_t *)malloc((size_t)cmp_len);
+    int cmp_status = compress(cmp_data, (mz_ulong *)&cmp_len, (const unsigned char *)source, src_len);
     if (cmp_status != Z_OK)
     {
-      printf("compress() failed!\n");
-      free(cmp_data);
+        printf("compress() failed!\n");
+        free(cmp_data);
     }
     printf("Compressed from %llu to %llu bytes\n", (uint64_t)src_len, (uint64_t)cmp_len);
 
-    // Console
-
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
-    printf("Good");
-    SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE); // white
-    printf("bye\n");
-
-    if (EXPORT_LEVEL_TO_BMP && level_image != NULL)
-    {
-        image_free(level_image);
-    }
-
     // Visible rect
-    Image * guard = sprites[119 - 64];
-    Image * dog = sprites[168 - 64];
-    Image * dg1 = image_new(128, 128);
+    Image *guard = sprites[119 - 64];
+    Image *dog = sprites[168 - 64];
+    Image *dg1 = image_new(128, 128);
     image_fill(dg1, WHITE);
     image_draw_image(dg1, 0, 0, dog);
 

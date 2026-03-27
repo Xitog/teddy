@@ -1,5 +1,11 @@
 Wolf3dData Project History and links
 
+27/03/2026
+Flèches factorisées dans image.c et colorisables
+Gestion des turning point
+Affichage complet du niveau E1M1
+Commandes info et export OK
+
 23/03/2026
 Meilleur encadrement des sprites pour indiquer leur niveau de difficulté
 Affichage sans la grille

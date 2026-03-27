@@ -211,6 +211,80 @@ bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, u
     return true;
 }
 
+void level_info(Level lvl)
+{
+    uint32_t static_objects = 0;
+    uint32_t tile_objects = 0;
+    uint32_t doors =  0;
+    uint32_t elevators = 0;
+    uint32_t secrets = 0;
+    uint32_t baddies1 = 0;
+    uint32_t baddies3 = 0;
+    uint32_t baddies4 = 0;
+    uint32_t bosses = 0;
+    uint32_t starts = 0;
+    uint32_t total = 0;
+    for (uint16_t line = 0 ; line < lvl.width ; line++)
+    {
+        for (uint16_t col = 0 ; col < lvl.height ; col++)
+        {
+            uint8_t val0 = lvl.plane[0][line][col];
+            if (val0 == 90 || val0 == 91)
+            {
+                doors += 1;
+            }
+            else if (val0 == 100 || val0 == 101)
+            {
+                elevators += 1;
+            }
+            uint8_t val1 = lvl.plane[1][line][col];
+            if (val1 == 98)
+            {
+                secrets += 1;
+            }
+            else if (val1 >= 23 && val1 <= 62)
+            {
+                static_objects += 1;
+            }
+            else if (
+                (val1 >= 108 && val1 <= 115) || // guard any standing or patrolling
+                (val1 >= 138 && val1 <= 141))
+            {
+                baddies1 += 1;
+            }
+            else if (
+                (val1 >= 144 && val1 <= 151) || // guard med standing or patrolling
+                (val1 >= 174 && val1 <= 177))
+            {
+                baddies3 +=1 ;
+            }
+            else if (
+                (val1 >= 180 && val1 <= 187) || // guard hard standing or patrolling
+                (val1 >= 210 && val1 <= 213))
+            {
+                baddies4 += 1;
+            }
+            else if (val1 >= 19 && val1 <= 22)
+            {
+                starts += 1;
+            }
+        }
+    }
+    total = baddies1 + baddies3 + baddies4 + starts;
+    printf("Information for level %u:\n", lvl.number);
+    printf("Static Objects:       %u\n", static_objects); // 121
+    printf("Tile Objects:         \n"); // 24 ???
+    printf("Doors:                %u\n", doors); // 22 doors & elevators
+    printf("Elevators:            %u\n", elevators);
+    printf("Secrets:              %u\n", secrets); // 5 push wall
+    printf("Level any enemies:    %u\n", baddies1); // 11
+    printf("Level medium enemies: %u\n", baddies3); // 9
+    printf("Level hard enemies:   %u\n", baddies4); // 17
+    printf("Bosses:               \n"); // 0
+    printf("Start position:       %u\n", starts); // 1 = others. Dead guard or start position ? A voir...
+    printf("Total Actors:         %u\n", total); // 38
+}
+
 void level_stat(Level lvl, uint8_t plane, bool order_by_count)
 {
     uint16_t counts[256]; // MAX 256 different values
@@ -429,35 +503,44 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             uint16_t raw_sprite = lvl.plane[1][line][col];
             // 65 -42 = 23 et 104 -42 = 62
             uint32_t sprite = 0;
+            // -- Depart point ----------------------------------------------------------
             if (raw_sprite == 19) // Depart north
             {
-                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 31, (line + 1) * 64 - 10, GREEN); // |
-                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 32, (line + 1) * 64 - 10, GREEN); // |
-                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 15, line * 64 + 30, GREEN);
-                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 48, line * 64 + 30, GREEN);
-            } else if (raw_sprite == 20) { // Depart east (checked)
-                image_draw_line(img, col * 64 + 10, line * 64 + 31, (col + 1) * 64 - 10, line * 64 + 31, GREEN); // -
-                image_draw_line(img, col * 64 + 10, line * 64 + 32, (col + 1) * 64 - 10, line * 64 + 32, GREEN); // -
-                image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 31, (col + 1) * 64 - 30, line * 64 + 15, GREEN);
-                image_draw_line(img, (col + 1) * 64 - 10, line * 64 + 32, (col + 1) * 64 - 30, line * 64 + 48, GREEN);
+                image_draw_arrow(img, col * 64, line * 64, 64, NORTH, GREEN);
+            } else if (raw_sprite == 20) { // Depart east
+                image_draw_arrow(img, col * 64, line * 64, 64, EAST, GREEN);
             } else if (raw_sprite == 21) { // Depart south
-                image_draw_line(img, col * 64 + 31, line * 64 + 10, col * 64 + 31, (line + 1) * 64 - 10, GREEN); // |
-                image_draw_line(img, col * 64 + 32, line * 64 + 10, col * 64 + 32, (line + 1) * 64 - 10, GREEN); // |
-                image_draw_line(img, col * 64 + 31, (line + 1) * 64 - 10, col * 64 + 15, (line + 1) * 64 - 30, GREEN);
-                image_draw_line(img, col * 64 + 32, (line + 1) * 64 - 10, col * 64 + 48, (line + 1) * 64 - 30, GREEN);
+                image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, GREEN);
             } else if (raw_sprite == 22) { // Depart west
-                image_draw_line(img, col * 64 + 10, line * 64 + 31, (col + 1) * 64 - 10, line * 64 + 31, GREEN); // -
-                image_draw_line(img, col * 64 + 10, line * 64 + 32, (col + 1) * 64 - 10, line * 64 + 32, GREEN); // -
-                image_draw_line(img, col * 64 + 10, line * 64 + 31, col * 64 + 30, line * 64 + 15, GREEN);
-                image_draw_line(img, col * 64 + 10, line * 64 + 32, col * 64 + 30, line * 64 + 48, GREEN);
+                image_draw_arrow(img, col * 64, line * 64, 64, WEST, GREEN);
+            } else if (raw_sprite == 90) { // turning east
+                image_draw_arrow(img, col * 64, line * 64, 64, EAST, WHITE);
+            // -- Turning point ---------------------------------------------------------
+            } else if (raw_sprite == 91) { // turning north east
+                image_draw_arrow(img, col * 64, line * 64, 64, NORTH_EAST, WHITE);
+            } else if (raw_sprite == 92) { // turning north
+                image_draw_arrow(img, col * 64, line * 64, 64, NORTH, WHITE);
+            } else if (raw_sprite == 93) { // turning north west
+                image_draw_arrow(img, col * 64, line * 64, 64, NORTH_WEST, WHITE);
+            } else if (raw_sprite == 94) { // turning west
+                image_draw_arrow(img, col * 64, line * 64, 64, WEST, WHITE);
+            } else if (raw_sprite == 95) { // turning south west
+                image_draw_arrow(img, col * 64, line * 64, 64, SOUTH_WEST, WHITE);
+            } else if (raw_sprite == 96) { // turning south
+                image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, WHITE);
+            } else if (raw_sprite == 97) { // turning south east
+                image_draw_arrow(img, col * 64, line * 64, 64, SOUTH_EAST, WHITE);
+            // -- Objects ---------------------------------------------------------------
             } else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL) {
                 // remove the first 64 walls with -64
                 image_draw_image(img, col * 64, line * 64, sprites[raw_sprite + 42 - 64]);
+            // -- Push wall -------------------------------------------------------------
             } else if (raw_sprite == 98) {
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
-            } else if (raw_sprite == 124) { // Dead guard
+            // -- Dead Guard ------------------------------------------------------------
+            } else if (raw_sprite == 124) {
                 image_draw_image(img, col * 64, line * 64, sprites[158 - 64]);
-            // -- Guard -------------------------------------------------------
+            // -- Guard -----------------------------------------------------------------
             } else if (raw_sprite == 108 || raw_sprite == 144 || raw_sprite == 180) { // guard any/med/hard standing east
                 sprite = 119 - 64;
             } else if (raw_sprite == 109 || raw_sprite == 145 || raw_sprite == 181) { // guard any/med/hard standing north

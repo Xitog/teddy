@@ -48,6 +48,57 @@ void image_draw_digit(Image *dest, uint32_t x, uint32_t y, uint8_t digit, Pixel 
     }
 }
 
+void image_draw_arrow(Image *dest, uint32_t x, uint32_t y, uint32_t size, Orientation orientation, Pixel color)
+{
+    // size is not used, everything is for 64
+    if (orientation == NORTH)
+    {
+        image_draw_line(dest, x + 31, y + 10, x + 31, y + 64 - 10, color); // |
+        image_draw_line(dest, x + 32, y + 10, x + 32, y + 64 - 10, color); // |
+        image_draw_line(dest, x + 31, y + 10, x + 15, y + 30, color);
+        image_draw_line(dest, x + 32, y + 10, x + 48, y + 30, color);
+    } else if (orientation == NORTH_EAST) {
+        image_draw_line(dest, x + 10, y + 64 - 10, x + 64 - 10, y + 10, color); // /
+        image_draw_line(dest, x + 10, y + 64 - 11, x + 64 - 11, y + 10, color); // /
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color); // /
+        image_draw_line(dest, x + 31, y + 10, x + 64 - 10, y + 10, color); // --
+        image_draw_line(dest, x + 64 - 10, y + 10, x + 64 - 10, y + 31, color); // |
+    } else if (orientation == EAST) {
+        image_draw_line(dest, x + 10, y + 31, x + 64 - 10, y + 31, color); // -
+        image_draw_line(dest, x + 10, y + 32, x + 64 - 10, y + 32, color); // -
+        image_draw_line(dest, x + 64 - 10, y + 31, x + 64 - 30, y + 15, color);
+        image_draw_line(dest, x + 64 - 10, y + 32, x + 64 - 30, y + 48, color);
+    } else if (orientation == SOUTH_EAST) {
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 10, y + 64 - 10, color); // \s
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 11, y + 64 - 11, color); // \s
+        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color); // \s
+        image_draw_line(dest, x + 31, y + 64 - 9, x + 64 - 10, y + 64 - 9, color); // --
+        image_draw_line(dest, x + 64 - 10, y + 64 - 9, x + 64 - 10, y + 31, color); // |
+    } else if (orientation == SOUTH) {
+        image_draw_line(dest, x + 31, y + 10, x + 31, y + 64 - 10, color); // |
+        image_draw_line(dest, x + 32, y + 10, x + 32, y + 64 - 10, color); // |
+        image_draw_line(dest, x + 31, y + 64 - 10, x + 15, y + 64 - 30, color);
+        image_draw_line(dest, x + 32, y + 64 - 10, x + 48, y + 64 - 30, color);
+    } else if (orientation == SOUTH_WEST) {
+        image_draw_line(dest, x + 10, y + 64 - 10, x + 64 - 10, y + 10, color); // /
+        image_draw_line(dest, x + 10, y + 64 - 11, x + 64 - 11, y + 10, color); // /
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color); // /
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 31, y + 64 - 9, color); // --
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 10, y + 31, color); // |
+    } else if (orientation == WEST) {
+        image_draw_line(dest, x + 10, y + 31, x + 64 - 10, y + 31, color); // -
+        image_draw_line(dest, x + 10, y + 32, x + 64 - 10, y + 32, color); // -
+        image_draw_line(dest, x + 10, y + 31, x + 30, y + 15, color);
+        image_draw_line(dest, x + 10, y + 32, x + 30, y + 48, color);
+    } else if (orientation == NORTH_WEST) {
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 10, y + 64 - 10, color); // \s
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 11, y + 64 - 11, color); // \s
+        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color); // \s
+        image_draw_line(dest, x + 31, y + 10, x + 10, y + 10, color); // --
+        image_draw_line(dest, x + 10, y + 10, x + 10, y + 31, color); // |
+    }
+}
+
 void image_draw_line(Image *dest, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, Pixel color)
 {
     // printf("x1=%u y1=%u x2=%u y2=%u\n", x1, y1, x2, y2);
@@ -332,6 +383,7 @@ void image_save_to_png(Image *img, const char *file_path)
         return;
     }
     fclose(f);
+    printf("Saved at : %s\n", file_path);
 }
 
 void image_save_to_png2(Image *img, const char *file_path)
