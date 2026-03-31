@@ -1,5 +1,8 @@
 Wolf3dData Project History and links
 
+31/03/2026
+Ajout commande check pour vérifier la prise en charge d'un niveau
+
 27/03/2026
 Flèches factorisées dans image.c et colorisables
 Gestion des turning point

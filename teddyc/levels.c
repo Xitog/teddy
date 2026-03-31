@@ -443,6 +443,46 @@ bool wall_is_not_enclosed(Level lvl, uint16_t pline, uint16_t pcol)
     return false;
 }
 
+bool is_starting_point(uint16_t val)
+{
+    return (val >= 19 && val <= 22);
+}
+
+bool is_turning_point(uint16_t val)
+{
+    return (val >= 90 && val <= 97);
+}
+
+bool is_guard(uint16_t val)
+{
+    return ((val >= 108 && val <= 115) || (val >= 144 && val <= 151) || (val >= 180 && val <= 187));
+}
+
+bool is_dog(uint16_t val)
+{
+    return ((val >= 138 && val <= 141) || (val >= 174 && val <= 177) || (val >= 210 && val <= 213));
+}
+
+bool is_empty(uint16_t val)
+{
+    return val == 0;
+}
+
+bool is_object(uint16_t val)
+{
+    return (val >= 23 && val <= 62);
+}
+
+bool is_pushwall(uint16_t val)
+{
+    return val == 98;
+}
+
+bool is_dead_guard(uint16_t val)
+{
+    return val == 124;
+}
+
 Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[], bool grid, bool thin_wall)
 {
     Image * img = image_new(4096, 4096); // 64*64
@@ -513,9 +553,9 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, GREEN);
             } else if (raw_sprite == 22) { // Depart west
                 image_draw_arrow(img, col * 64, line * 64, 64, WEST, GREEN);
+            // -- Turning point ---------------------------------------------------------
             } else if (raw_sprite == 90) { // turning east
                 image_draw_arrow(img, col * 64, line * 64, 64, EAST, WHITE);
-            // -- Turning point ---------------------------------------------------------
             } else if (raw_sprite == 91) { // turning north east
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH_EAST, WHITE);
             } else if (raw_sprite == 92) { // turning north

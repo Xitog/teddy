@@ -49,6 +49,14 @@ Level create_level_from_files(const Data levelDataFile, LevelHeader * level_head
 void level_info(Level lvl);
 void level_stat(Level lvl, uint8_t plane, bool order_by_count);
 bool export_plane_to_txt(Level lvl, uint8_t plane);
+
+bool is_starting_point(uint16_t val);
+bool is_turning_point(uint16_t val);
+bool is_guard(uint16_t val);
+bool is_dog(uint16_t val);
+bool is_pushwall(uint16_t val);
+bool is_dead_guard(uint16_t val);
+
 Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[], bool grid, bool thin_wall);
 
 #endif

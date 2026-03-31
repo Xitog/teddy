@@ -34,6 +34,24 @@ const char *ASSET_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\
 
 const uint8_t ALL_PLANES = 3;
 
+void setConsoleColorGreen()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+}
+
+void setConsoleColorRed()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_RED);
+}
+
+void setConsoleColorDefault()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}
+
 void first_five_pixel(const Data assetDataFile, AssetHeader assetHeader, uint16_t index)
 {
     uint32_t ptr = assetHeader.pointers[index];
@@ -346,8 +364,6 @@ int main(int argc, const char *argv[])
     // list : list all recognized files
     // asset X : extract asset at index X (or all) in VSWAP in the correct format (bmp)
     // map X F : extract map number X (or all) in F format (txt, csv or bmp)
-    // stats X ou count X : run statistics on map X
-    // extract walls : extract all walls
 
     bool good = false;
     if (argc == 1 || (argc == 2 && str_is(argv[1], "help")))
@@ -357,9 +373,10 @@ int main(int argc, const char *argv[])
         printf("---------------------------------\n");
         printf("Help menu:\n");
         printf("info <level>          : map information\n");
-        printf("count <level>         : count of map objects\n");
+        printf("count <level>         : count of map objects\n"); // ex stats
         printf("extract walls         : extract all walls\n");
-        printf("export <level> <type> : export a level to <type> (png, bmp or all)\n");
+        printf("export <level> <type> : export a <level> to <type> (png, bmp or all)\n");
+        printf("check <level>         : check if everything is known for <level>\n");
         good = true;
     }
     else if (argc >= 2)
@@ -422,7 +439,7 @@ int main(int argc, const char *argv[])
         }
         else if (str_is(argv[1], "export"))
         {
-            if (argc == 2)
+            if (argc == 2 || !is_str_digit(argv[2]))
             {
                 printf("You must indicate a level number to export.\n");
                 good = false;
@@ -473,6 +490,58 @@ int main(int argc, const char *argv[])
                 }
             }
         }
+        else if (str_is(argv[1], "check"))
+        {
+            if (argc == 2 || !is_str_digit(argv[2]))
+            {
+                printf("You must indicate a level number to export.\n");
+            }
+            else
+            {
+                level_index = str_to_digit(argv[2]);
+                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                uint32_t unknown = 0;
+                for (uint16_t line = 0; line < lvl.width; line++)
+                {
+                    for (uint16_t col = 0; col < lvl.height; col++)
+                    {
+                        uint16_t val0 = lvl.plane[0][line][col];
+                        uint16_t val1 = lvl.plane[1][line][col];
+
+                        if (val0 <= 64 && textures[val0] == NULL)
+                        {
+                            printf("[Plane 0] Unloaded texture: %u\n", val0);
+                            unknown += 1;
+                        }
+                        else if (val0 != 90 && val0 != 91 && val0 != 92 && val0 != 93 && val0 != 100 && val0 < 106 && val0 > 143)
+                        {
+                            printf("[Plane 0] Unknown value: %u\n", val0);
+                            unknown += 1;
+                        }
+
+                        if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_starting_point(val1) &&
+                            !is_turning_point(val1) && !is_object(val1) && !is_pushwall(val1) && !is_dead_guard(val1))
+                        {
+                            printf("[Plane 1] Unknown value: %u\n", val1);
+                            unknown += 1;
+                        }
+                    }
+                }
+                good = true;
+                if (unknown == 0)
+                {
+                    setConsoleColorGreen();
+                    printf("Level %u : all values handled.\n", level_index);
+                    setConsoleColorDefault();
+                }
+                else
+                {
+                    setConsoleColorRed();
+                    printf("Level %u : %u unknown values.\n", level_index, unknown);
+                    setConsoleColorDefault();
+                }
+            }
+        }
         else if (str_is(argv[1], "list"))
         {
             printf("List all files\n");
@@ -495,9 +564,6 @@ int main(int argc, const char *argv[])
         return EXIT_SUCCESS;
     }
 
-
-
-
     // Exports
     if (EXPORT_PLANE_TO_TEXT)
     {
@@ -512,8 +578,6 @@ int main(int argc, const char *argv[])
             return EXIT_FAILURE;
         }
     }
-
-
 
     getBuildInfo();
     char *cwd = getCurrentDir();
