@@ -494,7 +494,7 @@ int main(int argc, const char *argv[])
         {
             if (argc == 2 || !is_str_digit(argv[2]))
             {
-                printf("You must indicate a level number to export.\n");
+                printf("You must indicate a level number to check.\n");
             }
             else
             {
@@ -510,19 +510,20 @@ int main(int argc, const char *argv[])
 
                         if (val0 <= 64 && textures[val0] == NULL)
                         {
-                            printf("[Plane 0] Unloaded texture: %u\n", val0);
+                            printf(">>> [Plane 0] Unloaded texture at line=%u col=%u: %u\n", line, col, val0);
                             unknown += 1;
                         }
                         else if (val0 != 90 && val0 != 91 && val0 != 92 && val0 != 93 && val0 != 100 && val0 < 106 && val0 > 143)
                         {
-                            printf("[Plane 0] Unknown value: %u\n", val0);
+                            printf(">>> [Plane 0] Unknown value at line=%u col=%u: %u\n", line, col, val0);
                             unknown += 1;
                         }
 
-                        if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_starting_point(val1) &&
-                            !is_turning_point(val1) && !is_object(val1) && !is_pushwall(val1) && !is_dead_guard(val1))
+                        if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_ss(val1) &&
+                            !is_starting_point(val1) && !is_turning_point(val1) && !is_object(val1) &&
+                            !is_pushwall(val1) && !is_dead_guard(val1))
                         {
-                            printf("[Plane 1] Unknown value: %u\n", val1);
+                            printf(">>> [Plane 1] Unknown value at line=%u col=%u: %u\n", line, col, val1);
                             unknown += 1;
                         }
                     }

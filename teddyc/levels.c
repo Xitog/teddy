@@ -463,6 +463,11 @@ bool is_dog(uint16_t val)
     return ((val >= 138 && val <= 141) || (val >= 174 && val <= 177) || (val >= 210 && val <= 213));
 }
 
+bool is_ss(uint16_t val)
+{
+    return ((val >= 126 && val <= 133) || (val >= 162 && val <= 169) || (val >= 198 && val <= 205));
+}
+
 bool is_empty(uint16_t val)
 {
     return val == 0;
@@ -606,6 +611,24 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 sprite = 164 - 64;
             } else if (raw_sprite == 141 || raw_sprite == 177 || raw_sprite == 213) { // dog any/med/hard patrolling south
                 sprite = 162 - 64;
+            // -- SS ----------------------------------------------------------
+            } else if (raw_sprite == 126 || raw_sprite == 162 || raw_sprite == 198) { // ss any/med/hard standing east
+                sprite = 207 - 64;
+            } else if (raw_sprite == 127 || raw_sprite == 163 || raw_sprite == 199) { // ss any/med/hard standing north
+                sprite = 205 - 64;
+            } else if (raw_sprite == 128 || raw_sprite == 164 || raw_sprite == 200) { // ss any/med/hard standing west
+                sprite = 203 - 64;
+            } else if (raw_sprite == 129 || raw_sprite == 165 || raw_sprite == 201) { // ss any/med/hard standing south
+                sprite = 201 - 64;
+            } else if (raw_sprite == 130 || raw_sprite == 166 || raw_sprite == 202) { // ss any/med/hard patrolling east
+                sprite = 215 - 64;
+            } else if (raw_sprite == 131 || raw_sprite == 167 || raw_sprite == 203) { // ss any/med/hard patrolling north
+                sprite = 213 - 64;
+            } else if (raw_sprite == 132 || raw_sprite == 168 || raw_sprite == 204) { // ss any/med/hard patrolling west
+                sprite = 211 - 64;
+            } else if (raw_sprite == 133 || raw_sprite == 169 || raw_sprite == 205) { // ss any/med/hard patrolling south
+                sprite = 209 - 64;
+            // -- Unhandled ---------------------------------------------------
             } else if (raw_sprite != 0) { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
                 unhandled_plane1 += 1;
@@ -616,18 +639,18 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             }
 
             // Difficulty indication
-            if ((raw_sprite >= 144 && raw_sprite <= 151) ||
-                (raw_sprite >= 174 && raw_sprite <= 177)) // guard standing and patrolling
+            if ((raw_sprite >= 144 && raw_sprite <= 151) || // guard standing and patrolling
+                (raw_sprite >= 174 && raw_sprite <= 177) || // dog patrolling
+                (raw_sprite >= 162 && raw_sprite <= 169))   // ss standing and patrolling)
             {
                 Rect rect = image_get_visible_rectangle(sprites[sprite], MAGENTA, 2);
                 image_draw_rect(img, col * 64 + rect.x, line * 64 + rect.y - 3, rect.width, rect.height, ORANGE, false);
-                //image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, ORANGE, false);
-            } else if ((raw_sprite >= 180 && raw_sprite <= 187) ||
-                       (raw_sprite >= 210 && raw_sprite <= 213)) // guard standing and patrolling
+            } else if ((raw_sprite >= 180 && raw_sprite <= 187) || // guard standing and patrolling
+                       (raw_sprite >= 210 && raw_sprite <= 213) || // dog patrolling
+                       (raw_sprite >= 198 && raw_sprite <= 205))   // ss standing and patrolling
             {
                 Rect rect = image_get_visible_rectangle(sprites[sprite], MAGENTA, 2);
                 image_draw_rect(img, col * 64 + rect.x, line * 64 + rect.y - 3, rect.width, rect.height, RED, false);
-                //image_draw_rect(img, col * 64 + 18, line * 64 + 13, 29, 54, RED, false);
             }
         }
     }

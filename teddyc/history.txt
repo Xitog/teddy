@@ -1,12 +1,16 @@
 Wolf3dData Project History and links
 
+01/04/2026
+Gestion des ennemis ss avec rectangle de difficulté
+Production d'un png pour le E1 niveau 2 (index = 1)
+
 31/03/2026
 Ajout commande check pour vérifier la prise en charge d'un niveau
 
 27/03/2026
 Flèches factorisées dans image.c et colorisables
 Gestion des turning point
-Affichage complet du niveau E1M1
+Affichage complet du E1 niveau 1 (index = 0)
 Commandes info et export OK
 
 23/03/2026

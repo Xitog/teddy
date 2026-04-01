@@ -54,6 +54,7 @@ bool is_starting_point(uint16_t val);
 bool is_turning_point(uint16_t val);
 bool is_guard(uint16_t val);
 bool is_dog(uint16_t val);
+bool is_ss(uint16_t val);
 bool is_pushwall(uint16_t val);
 bool is_dead_guard(uint16_t val);
 
