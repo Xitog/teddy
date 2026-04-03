@@ -545,7 +545,7 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             }
             // -- Plane 1 --
             // Magical number... don't ask why
-            uint16_t raw_sprite = lvl.plane[1][line][col];
+            uint16_t raw_sprite = lvl.plane[1][line][col]; // line is Y and col is X
             // 65 -42 = 23 et 104 -42 = 62
             uint32_t sprite = 0;
             // -- Depart point ----------------------------------------------------------

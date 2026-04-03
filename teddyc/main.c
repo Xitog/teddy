@@ -199,6 +199,65 @@ bool str_is(const char *value, const char *expected)
     return strcmp(value, expected) == 0;
 }
 
+typedef struct LevelIdentifierStruct
+{
+    uint8_t episode;        // E1
+    uint8_t level;          // M1
+    uint8_t index;          // = 0
+} LevelIdentifier;
+
+bool is_valid_level(const char *value)
+{
+    bool ok = false;
+    if (strlen(value) == 4)
+    {
+        if (
+            (value[0] == 'E' || value[0] == 'e') &&
+            isdigit(value[1]) &&
+            (value[2] == 'M' || value[2] == 'm') &&
+            isdigit(value[3]))
+        {
+            ok = true;
+        }
+    }
+    else if (strlen(value) == 5)
+    {
+        if (strcmp(value, "E1M10") == 0 || strcmp(value, "e1m10"))
+        {
+            ok = true;
+        }
+    }
+    return ok;
+}
+
+LevelIdentifier str_to_level_identifier(const char *value)
+{
+    uint8_t episode = 0;
+    uint8_t level = 0;
+    if (strlen(value) == 4)
+    {
+        if (
+            (value[0] == 'E' || value[0] == 'e') && // TODO: Handle max E
+            isdigit(value[1]) &&
+            (value[2] == 'M' || value[2] == 'm') &&
+            isdigit(value[3]))
+        {
+            episode = value[1] - '0';
+            level = value[3] - '0';
+        }
+    }
+    else if (strlen(value) == 5)
+    {
+        if (strcmp(value, "E1M10") == 0 || strcmp(value, "e1m10")) // TODO: Handle E>1
+        {
+            episode = 1;
+            level = 10;
+        }
+    }
+    LevelIdentifier li = { .episode = episode, .level = level, .index = level - 1}; // TODO: Handle E>1
+    return li;
+}
+
 const bool EXPORT_PLANE_TO_TEXT = false;
 const bool EXPORT_ALL_SPRITES = false;
 
@@ -377,6 +436,7 @@ int main(int argc, const char *argv[])
         printf("extract walls         : extract all walls\n");
         printf("export <level> <type> : export a <level> to <type> (png, bmp or all)\n");
         printf("check <level>         : check if everything is known for <level>\n");
+        printf("Every level must be in the format EXMY or eXmY\n");
         good = true;
     }
     else if (argc >= 2)
@@ -439,10 +499,9 @@ int main(int argc, const char *argv[])
         }
         else if (str_is(argv[1], "export"))
         {
-            if (argc == 2 || !is_str_digit(argv[2]))
+            if (argc == 2 || !is_valid_level(argv[2]))
             {
-                printf("You must indicate a level number to export.\n");
-                good = false;
+                printf("You must indicate a level with format EXMY or eXmY to export.\n");
             }
             else
             {
@@ -466,24 +525,24 @@ int main(int argc, const char *argv[])
                         bmp = true;
                     }
                 }
-                level_index = str_to_digit(argv[2]);
+                LevelIdentifier identifier = str_to_level_identifier(argv[2]);
                 good = true;
-                printf("Exporting level %u\n", level_index);
+                printf("Exporting level e%um%u\n", identifier.episode, identifier.level);
                 Image *level_image = NULL;
                 bool NO_GRID = false;
                 bool THIN_WALL = true;
-                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
                 level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
                 if (level_image != NULL)
                 {
                     if (bmp)
                     {
-                        sprintf(file_name, "level%u.bmp", level_index);
+                        sprintf(file_name, "e%um%u.bmp", identifier.episode, identifier.level);
                         image_save_to_bmp(level_image, file_name);
                     }
                     if (png)
                     {
-                        sprintf(file_name, "level%u.png", level_index);
+                        sprintf(file_name, "e%um%u.png", identifier.episode, identifier.level);
                         image_save_to_png(level_image, file_name);
                     }
                     image_free(level_image);
@@ -492,14 +551,14 @@ int main(int argc, const char *argv[])
         }
         else if (str_is(argv[1], "check"))
         {
-            if (argc == 2 || !is_str_digit(argv[2]))
+            if (argc == 2 || !is_valid_level(argv[2]))
             {
-                printf("You must indicate a level number to check.\n");
+                printf("You must indicate a level with format EXMY or eXmY to check.\n");
             }
             else
             {
-                level_index = str_to_digit(argv[2]);
-                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
+                LevelIdentifier identifier = str_to_level_identifier(argv[2]);
+                Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
                 uint32_t unknown = 0;
                 for (uint16_t line = 0; line < lvl.width; line++)
                 {
@@ -532,13 +591,13 @@ int main(int argc, const char *argv[])
                 if (unknown == 0)
                 {
                     setConsoleColorGreen();
-                    printf("Level %u : all values handled.\n", level_index);
+                    printf("Level e%um%u : all values handled.\n", identifier.episode, identifier.level);
                     setConsoleColorDefault();
                 }
                 else
                 {
                     setConsoleColorRed();
-                    printf("Level %u : %u unknown values.\n", level_index, unknown);
+                    printf("Level e%um%u : %u unknown values.\n", identifier.episode, identifier.level, unknown);
                     setConsoleColorDefault();
                 }
             }

@@ -1,5 +1,9 @@
 Wolf3dData Project History and links
 
+03/04/2026
+Changement de format de paramètres : on passe de "0" à "E1M1" ou "e1m1" plus amical pour les humains
+Production d'un png pour E1M3 (val 73 sur Plane 1 inconnue à x=col=20 y=lin=7) et E1M4
+
 01/04/2026
 Gestion des ennemis ss avec rectangle de difficulté
 Production d'un png pour le E1 niveau 2 (index = 1)
