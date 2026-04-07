@@ -170,7 +170,7 @@ bool wall_to_png(const Data assetDataFile, AssetHeader assetHeader, uint16_t ind
     return true;
 }
 
-bool is_str_digit(const char *s)
+bool str_is_integer(const char *s)
 {
     for (int32_t i = 0; i < strlen(s); i++)
     {
@@ -206,7 +206,7 @@ typedef struct LevelIdentifierStruct
     uint8_t index;          // = 0
 } LevelIdentifier;
 
-bool is_valid_level(const char *value)
+bool str_is_valid_level(const char *value)
 {
     bool ok = false;
     if (strlen(value) == 4)
@@ -260,6 +260,96 @@ LevelIdentifier str_to_level_identifier(const char *value)
 
 const bool EXPORT_PLANE_TO_TEXT = false;
 const bool EXPORT_ALL_SPRITES = false;
+
+//-----------------------------------------------------------------------------
+// Command Parser
+//-----------------------------------------------------------------------------
+
+typedef struct CommandParserStructure
+{
+    int size;
+    const char **elements;
+    int index;
+} CommandParser;
+
+CommandParser command_parser_create(int at, int argc, const char *argv[])
+{
+    CommandParser cp = {.index = at, .size = argc, .elements = argv};
+    return cp;
+}
+
+int command_parser_size(CommandParser cp)
+{
+    return cp.size;
+}
+
+int command_parser_left(CommandParser cp)
+{
+    printf("Left : %d\n", cp.size - cp.index);
+    return cp.size - cp.index;
+}
+
+const char * command_parser_get_current(CommandParser cp)
+{
+    printf("Current : %s at %u\n", cp.elements[cp.index], cp.index);
+    return cp.elements[cp.index];
+}
+
+const char * command_parser_advance(CommandParser *cp)
+{
+    const char * old = cp->elements[cp->index];
+    cp->index += 1;
+    return old;
+}
+
+bool command_parser_is_level(CommandParser cp)
+{
+    return str_is_valid_level(command_parser_get_current(cp));
+}
+
+bool command_parser_is_string(CommandParser cp, const char *expected)
+{
+    return str_is(command_parser_get_current(cp), expected);
+}
+
+//-----------------------------------------------------------------------------
+// Commands
+//-----------------------------------------------------------------------------
+
+bool command_help()
+{
+    printf("---------------------------------\n");
+    printf("- Teddy v%s\n", TEDDY_VERSION);
+    printf("---------------------------------\n");
+    printf("Help menu:\n");
+    printf("help                                : display this help\n");
+    printf("repl | interactive                  : start a read-eval-print-loop\n");
+    printf("info | count | stats | stat <level> : map information with statistics\n"); // count of objects
+    printf("export | extract <level> <type>     : export a <level> to <type> (png, bmp or all)\n");
+    printf("check <level>                       : check if everything is known for <level>\n");
+    printf("Every level must be in the format EXMY or eXmY\n");
+    return true;
+}
+
+// Aka info, count, stats or stat
+bool command_info(CommandParser cp, Data levelDataFile, LevelHeader *level_headers)
+{
+    if (command_parser_left(cp) == 0 || !command_parser_is_level(cp))
+    {
+        printf("[info] You must indicate a level with format EXMY or eXmY.\n");
+        return false;
+    }
+    LevelIdentifier identifier = str_to_level_identifier(command_parser_advance(&cp));
+    bool by_count = false;
+    if (command_parser_left(cp) > 0 && command_parser_is_string(cp, "by_count"))
+    {
+        by_count = true;
+    }
+    Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
+    printf("Information for level e%um%u [@%u]\n", identifier.episode, identifier.level, identifier.index);
+    level_stat(lvl, by_count);
+    return true;
+}
 
 int main(int argc, const char *argv[])
 {
@@ -427,55 +517,18 @@ int main(int argc, const char *argv[])
     bool good = false;
     if (argc == 1 || (argc == 2 && str_is(argv[1], "help")))
     {
-        printf("---------------------------------\n");
-        printf("- Teddy v%s\n", TEDDY_VERSION);
-        printf("---------------------------------\n");
-        printf("Help menu:\n");
-        printf("info <level>          : map information\n");
-        printf("count <level>         : count of map objects\n"); // ex stats
-        printf("extract walls         : extract all walls\n");
-        printf("export <level> <type> : export a <level> to <type> (png, bmp or all)\n");
-        printf("check <level>         : check if everything is known for <level>\n");
-        printf("Every level must be in the format EXMY or eXmY\n");
-        good = true;
+        good = command_help();
     }
     else if (argc >= 2)
     {
-        if (str_is(argv[1], "info"))
+        CommandParser cp = command_parser_create(1, argc, argv);
+        if (command_parser_is_string(cp, "info") ||
+            command_parser_is_string(cp, "count") ||
+            command_parser_is_string(cp, "stats") ||
+            command_parser_is_string(cp, "stat"))
         {
-            if (argc == 2 || !is_str_digit(argv[2]))
-            {
-                printf("You must indicate a level number to get information.\n");
-                good = false;
-            }
-            else
-            {
-                level_index = str_to_digit(argv[2]);
-                good = true;
-                printf("Getting information on level %u\n", level_index);
-                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
-                level_info(lvl);
-            }
-        }
-        else if (str_is(argv[1], "count"))
-        {
-            if (argc == 2 || !is_str_digit(argv[2]))
-            {
-                printf("You must indicate a level number to run the statistics.\n");
-                good = false;
-            }
-            else
-            {
-                level_index = str_to_digit(argv[2]);
-                good = true;
-                if (argc == 4 && str_is(argv[3], "count_order"))
-                {
-                    order_by_count = true;
-                }
-                printf("Running statistics on level %u\n", level_index);
-                Level lvl = create_level_from_files(levelDataFile, level_headers, level_index);
-                level_stat(lvl, 0, order_by_count);
-            }
+            command_parser_advance(&cp);
+            good = command_info(cp, levelDataFile, level_headers);
         }
         else if (str_is(argv[1], "extract"))
         {
@@ -499,7 +552,7 @@ int main(int argc, const char *argv[])
         }
         else if (str_is(argv[1], "export"))
         {
-            if (argc == 2 || !is_valid_level(argv[2]))
+            if (argc == 2 || !str_is_valid_level(argv[2]))
             {
                 printf("You must indicate a level with format EXMY or eXmY to export.\n");
             }
@@ -551,7 +604,7 @@ int main(int argc, const char *argv[])
         }
         else if (str_is(argv[1], "check"))
         {
-            if (argc == 2 || !is_valid_level(argv[2]))
+            if (argc == 2 || !str_is_valid_level(argv[2]))
             {
                 printf("You must indicate a level with format EXMY or eXmY to check.\n");
             }

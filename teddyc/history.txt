@@ -1,5 +1,14 @@
 Wolf3dData Project History and links
 
+07/04/2026
+Fusion des commandes info et count/stat
+
+06/04/2026
+Réorganisation de la commande help
+
+05/04/2026
+Début réorganisation de l’analyse des commandes : commande_info faite avec nouveau TAD CommandParser (qui analyse en prévision et avance)
+
 03/04/2026
 Changement de format de paramètres : on passe de "0" à "E1M1" ou "e1m1" plus amical pour les humains
 Production d'un png pour E1M3 (val 73 sur Plane 1 inconnue à x=col=20 y=lin=7) et E1M4

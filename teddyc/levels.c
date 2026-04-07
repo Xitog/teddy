@@ -1,18 +1,18 @@
 #include "levels.h"
 
-void display_header(const Header * header)
+void display_header(const Header *header)
 {
     printf("------------------------------------------------------------\n");
     printf("Magic number (ABCD) : %d (%X)\n", header->magic_word, header->magic_word);
     printf("Number of levels    : %d\n", header->number);
-    for (uint8_t i = 0 ; i < header->number; i++)
+    for (uint8_t i = 0; i < header->number; i++)
     {
         printf("    %03d. %06u %x\n", i + 1, header->level_header_ptr[i], header->level_header_ptr[i]);
     }
     printf("------------------------------------------------------------\n");
 }
 
-bool read_header(const Data mem, Header * header)
+bool read_header(const Data mem, Header *header)
 {
     if (header == NULL)
     {
@@ -27,11 +27,12 @@ bool read_header(const Data mem, Header * header)
     // Donc Il faut 2 chars hexa pour décrire un byte = 8 bits = 1 char.
     header->magic_word = read_uint16(mem, 0);
     header->number = 0;
-    for (uint8_t i = 0; i < 100; i++) {
+    for (uint8_t i = 0; i < 100; i++)
+    {
         int32_t ptr = read_uint32(mem, 2 + i * 4);
         if (ptr >= 0)
         {
-            header->level_header_ptr[i] = (uint32_t) ptr;
+            header->level_header_ptr[i] = (uint32_t)ptr;
             header->number++;
         }
         else
@@ -42,7 +43,7 @@ bool read_header(const Data mem, Header * header)
     return true;
 }
 
-bool read_level_header(const Data mem, uint32_t offset, LevelHeader * lh)
+bool read_level_header(const Data mem, uint32_t offset, LevelHeader *lh)
 {
     if (lh == NULL)
     {
@@ -56,40 +57,41 @@ bool read_level_header(const Data mem, uint32_t offset, LevelHeader * lh)
     lh->offsetPlane0 = read_int32(mem, offset + 0);
     lh->offsetPlane1 = read_int32(mem, offset + 4);
     lh->offsetPlane2 = read_int32(mem, offset + 8);
-    if (lh->offsetPlane0 >= 0) {
+    if (lh->offsetPlane0 >= 0)
+    {
         lh->lenghtPlane0 = read_uint16(mem, offset + 12);
     }
-    if (lh->offsetPlane1 >= 0) {
+    if (lh->offsetPlane1 >= 0)
+    {
         lh->lenghtPlane1 = read_uint16(mem, offset + 14);
     }
-    if (lh->offsetPlane2 >= 0) {
+    if (lh->offsetPlane2 >= 0)
+    {
         lh->lenghtPlane2 = read_uint16(mem, offset + 16);
     }
     lh->width = read_uint16(mem, offset + 18);
     lh->height = read_uint16(mem, offset + 20);
     int i = 0;
-    while ((char) mem.data[offset + 22 + i] != '\0')
+    while ((char)mem.data[offset + 22 + i] != '\0')
     {
-        lh->name[i] = (char) mem.data[offset + 22 + i];
+        lh->name[i] = (char)mem.data[offset + 22 + i];
         i++;
     }
     lh->name[i] = '\0';
     return true;
 }
 
-
-void display_level_header(const LevelHeader * lh)
+void display_level_header(const LevelHeader *lh)
 {
     printf("%-16s : %ux%u | %06d %4x [%4u] | %06d %4x [%4u] | %06d %4x [%4u] |\n",
-        lh->name,
-        lh->width, lh->height,
-        lh->offsetPlane0, lh->offsetPlane0, lh->lenghtPlane0,
-        lh->offsetPlane1, lh->offsetPlane1, lh->lenghtPlane1,
-        lh->offsetPlane2, lh->offsetPlane2, lh->lenghtPlane2
-    );
+           lh->name,
+           lh->width, lh->height,
+           lh->offsetPlane0, lh->offsetPlane0, lh->lenghtPlane0,
+           lh->offsetPlane1, lh->offsetPlane1, lh->lenghtPlane1,
+           lh->offsetPlane2, lh->offsetPlane2, lh->lenghtPlane2);
 }
 
-void display_level_header2(const LevelHeader * lh)
+void display_level_header2(const LevelHeader *lh)
 {
     printf("------------------------------------------------------------\n");
     printf("Level name         : %s\n", lh->name);
@@ -103,14 +105,14 @@ void display_level_header2(const LevelHeader * lh)
     printf("------------------------------------------------------------\n");
 }
 
-bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * output)
+bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t *output)
 {
     uint16_t size = read_uint16(mem, offset);
 #ifdef DEBUG
     printf("Compressed data length   = %u\n", length);
     printf("Uncompressed data length = %u\n", size);
-    printf("Previsionned data length = %d\n", 64*64*2); // 2 bytes by case
-    printf("Compressed ratio         = %d%%\n", (int) round(((double) length / size) * 100));
+    printf("Previsionned data length = %d\n", 64 * 64 * 2); // 2 bytes by case
+    printf("Compressed ratio         = %d%%\n", (int)round(((double)length / size) * 100));
     printf("Starting offset          = %u\n", offset);
 #endif
     uint32_t tile_index = 0;
@@ -122,9 +124,9 @@ bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * out
         {
             if (tile_index < 1000)
             {
-                #ifdef DEBUG
+#ifdef DEBUG
                 printf("@%u/%u Uncompressed data : %u (%x)\n", offset_read, length, elem, elem);
-                #endif
+#endif
             }
             output[tile_index] = elem;
             tile_index += 1;
@@ -136,23 +138,23 @@ bool uncompress(const Data mem, uint32_t offset, uint16_t length, uint16_t * out
             uint16_t val = read_uint16(mem, offset_read + 4);
             if (tile_index < 1000)
             {
-                #ifdef DEBUG
+#ifdef DEBUG
                 printf("@%u/%u Compressed data detected : repeat %u times the value %u\n", offset_read, length, num, val);
-                #endif
+#endif
             }
             for (uint16_t i = 0; i < num; i++)
             {
                 output[tile_index] = val;
                 tile_index += 1;
             }
-            //tile_index += num;
+            // tile_index += num;
             offset_read += 6; // magic number, num, val
         }
     }
     return true;
 }
 
-bool read_plane(const LevelHeader * lhs, uint8_t level, uint8_t plane, const Data mem, uint16_t * output)
+bool read_plane(const LevelHeader *lhs, uint8_t level, uint8_t plane, const Data mem, uint16_t *output)
 {
     uint32_t offset;
     uint16_t length;
@@ -174,7 +176,7 @@ bool read_plane(const LevelHeader * lhs, uint8_t level, uint8_t plane, const Dat
     return uncompress(mem, offset, length, output);
 }
 
-bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, uint8_t plane)
+bool export_plane_to_txt_old(const LevelHeader *level_headers, uint8_t level, uint8_t plane)
 {
     char file_name[64];
     sprintf(file_name, "level%uplane%u.txt", level, plane);
@@ -184,7 +186,7 @@ bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, u
         printf("ERROR: Unable to open file %s for writing.\n", file_name);
         return false;
     }
-    uint16_t * source = NULL;
+    uint16_t *source = NULL;
     if (plane == 0)
     {
         source = level_headers[level].dataPlane0;
@@ -198,9 +200,9 @@ bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, u
         printf("[ERROR] Plane unknown: %u\n", plane);
         return false;
     }
-    for (uint16_t line = 0 ; line < level_headers[level].width ; line++)
+    for (uint16_t line = 0; line < level_headers[level].width; line++)
     {
-        for (uint16_t col = 0 ; col < level_headers[level].height ; col++)
+        for (uint16_t col = 0; col < level_headers[level].height; col++)
         {
             printf("%3u ", source[line * 64 + col]);
             fprintf(f, "%3u ", source[line * 64 + col]);
@@ -211,24 +213,82 @@ bool export_plane_to_txt_old(const LevelHeader * level_headers, uint8_t level, u
     return true;
 }
 
-void level_info(Level lvl)
+void array_display(uint16_t *array, uint32_t size, bool order_by_count)
 {
+    uint16_t nb_values = 0;
+    for (uint16_t i = 0; i < size; i++)
+    {
+        if (array[i] != 0)
+        {
+            if (!order_by_count)
+            {
+                printf("%u : %u\n", i, array[i]);
+            }
+            nb_values += 1;
+        }
+    }
+    if (order_by_count)
+    {
+        // Order
+        uint16_t index_last_max = 0;
+        uint16_t last_max = 0;
+        for (uint16_t count = 0; count < nb_values; count++)
+        {
+            for (uint16_t i = 0; i < size; i++)
+            {
+                if (array[i] > last_max)
+                {
+                    last_max = array[i];
+                    index_last_max = i;
+                }
+            }
+            printf("%u : %u\n", index_last_max, last_max);
+            array[index_last_max] = 0; // we delete step by step
+            last_max = 0;
+        }
+    }
+}
+
+void level_stat(Level lvl, bool order_by_count)
+{
+#define MAX_SIZE 256
+
     uint32_t static_objects = 0;
     uint32_t tile_objects = 0;
-    uint32_t doors =  0;
+    uint32_t doors = 0;
     uint32_t elevators = 0;
-    uint32_t secrets = 0;
+    uint32_t pushwalls = 0;
     uint32_t baddies1 = 0;
     uint32_t baddies3 = 0;
     uint32_t baddies4 = 0;
     uint32_t bosses = 0;
     uint32_t starts = 0;
     uint32_t total = 0;
-    for (uint16_t line = 0 ; line < lvl.width ; line++)
+    uint32_t directional_markers = 0;
+    uint32_t ammo = 0;
+    uint32_t weapons = 0;
+
+    uint16_t values0[MAX_SIZE];
+    uint16_t values1[MAX_SIZE];
+    uint16_t different_values0 = 0;
+    uint16_t different_values1 = 0;
+
+    for (uint16_t i = 0; i < MAX_SIZE; i++)
     {
-        for (uint16_t col = 0 ; col < lvl.height ; col++)
+        values0[i] = 0;
+        values1[i] = 0;
+    }
+
+    for (uint16_t line = 0; line < lvl.width; line++)
+    {
+        for (uint16_t col = 0; col < lvl.height; col++)
         {
             uint8_t val0 = lvl.plane[0][line][col];
+            if (values0[val0] == 0)
+            {
+                different_values0 += 1;
+            }
+            values0[val0] += 1;
             if (val0 == 90 || val0 == 91)
             {
                 doors += 1;
@@ -238,13 +298,26 @@ void level_info(Level lvl)
                 elevators += 1;
             }
             uint8_t val1 = lvl.plane[1][line][col];
+            if (values1[val1] == 0)
+            {
+                different_values1 += 1;
+            }
+            values1[val1] += 1;
             if (val1 == 98)
             {
-                secrets += 1;
+                pushwalls += 1;
             }
             else if (val1 >= 23 && val1 <= 62)
             {
                 static_objects += 1;
+                if (val1 == 49)
+                {
+                    ammo += 1;
+                }
+                else if (val1 == 50 || val1 == 51)
+                {
+                    weapons += 1;
+                }
             }
             else if (
                 (val1 >= 108 && val1 <= 115) || // guard any standing or patrolling
@@ -256,7 +329,7 @@ void level_info(Level lvl)
                 (val1 >= 144 && val1 <= 151) || // guard med standing or patrolling
                 (val1 >= 174 && val1 <= 177))
             {
-                baddies3 +=1 ;
+                baddies3 += 1;
             }
             else if (
                 (val1 >= 180 && val1 <= 187) || // guard hard standing or patrolling
@@ -268,73 +341,39 @@ void level_info(Level lvl)
             {
                 starts += 1;
             }
+            else if (val1 >= 90 && val1 <= 97)
+            {
+                directional_markers += 1;
+            }
         }
     }
     total = baddies1 + baddies3 + baddies4 + starts;
-    printf("Information for level %u:\n", lvl.number);
-    printf("Static Objects:       %u\n", static_objects); // 121
-    printf("Tile Objects:         \n"); // 24 ???
-    printf("Doors:                %u\n", doors); // 22 doors & elevators
-    printf("Elevators:            %u\n", elevators);
-    printf("Secrets:              %u\n", secrets); // 5 push wall
-    printf("Level any enemies:    %u\n", baddies1); // 11
-    printf("Level medium enemies: %u\n", baddies3); // 9
-    printf("Level hard enemies:   %u\n", baddies4); // 17
-    printf("Bosses:               \n"); // 0
+    printf("--------------------------\n");
+    printf("Static Objects/props: %u\n", static_objects); // 121 vs 122 sur le wiki
+    printf("Tile Objects:         \n");                   // 24 ???
+    printf("including ammo:       %u\n", ammo);           // 11 vs 13 sur le wiki
+    printf("including weapons:    %u\n", weapons);
+    printf("Directional markers:  %u\n", directional_markers); // 18
+    printf("Doors:                %u\n", doors);               // 20
+    printf("Elevators:            %u\n", elevators);           //  2
+    printf("Push walls:           %u\n", pushwalls);           //  5
+    printf("--------------------------\n");
+    printf("Enemies on easy:      %u\n", baddies1); // 11
+    printf("Enemies on medium:    %u\n", baddies3); //  9
+    printf("Enemies on hard:      %u\n", baddies4); // 17
+    printf("Bosses:               %u\n", bosses);   //  0
+    printf("Total enemies:        %u\n", baddies1 + baddies3 + baddies4 + bosses);
+    printf("--------------------------\n");
     printf("Start position:       %u\n", starts); // 1 = others. Dead guard or start position ? A voir...
-    printf("Total Actors:         %u\n", total); // 38
-}
-
-void level_stat(Level lvl, uint8_t plane, bool order_by_count)
-{
-    uint16_t counts[256]; // MAX 256 different values
-    for (uint16_t i = 0 ; i < 256 ; i++)
-    {
-        counts[i] = 0;
-    }
-    uint16_t values = 0;
-    for (uint16_t line = 0 ; line < lvl.width ; line++)
-    {
-        for (uint16_t col = 0 ; col < lvl.height ; col++)
-        {
-            uint8_t val = lvl.plane[plane][line][col];
-            if (counts[val] == 0)
-            {
-                values += 1;
-            }
-            counts[val] += 1;
-        }
-    }
-    printf("There are %u values:\n", values);
-    if (!order_by_count)
-    {
-        for (uint16_t i = 0 ; i < 256 ; i++)
-        {
-            if (counts[i] != 0)
-            {
-                printf("%u : %u\n", i, counts[i]);
-            }
-        }
-    } else {
-        // Order
-        uint16_t index_last_max = 0;
-        uint16_t last_max = 0;
-        for (uint16_t count = 0 ; count < values ; count++)
-        {
-            for (uint16_t i = 0 ; i < 256 ; i++)
-            {
-                if (counts[i] > last_max)
-                {
-                    last_max = counts[i];
-                    index_last_max = i;
-                }
-            }
-            printf("%u : %u\n", index_last_max, last_max);
-            counts[index_last_max] = 0; // we delete step by step
-            last_max = 0;
-            count += 1;
-        }
-    }
+    printf("Total Actors:         %u\n", total);  // 38
+    printf("--------------------------\n");
+    printf("Stats on plane 0:       \n");
+    printf("Number of values:     %u\n", different_values0);
+    array_display(values0, MAX_SIZE, order_by_count);
+    printf("--------------------------\n");
+    printf("Stats on plane 1:       \n");
+    printf("Number of values:     %u\n", different_values1);
+    array_display(values1, MAX_SIZE, order_by_count);
 }
 
 bool export_plane_to_txt(Level lvl, uint8_t plane)
@@ -347,9 +386,9 @@ bool export_plane_to_txt(Level lvl, uint8_t plane)
         printf("ERROR: Unable to open file %s for writing.\n", file_name);
         return false;
     }
-    for (uint16_t line = 0 ; line < lvl.width ; line++)
+    for (uint16_t line = 0; line < lvl.width; line++)
     {
-        for (uint16_t col = 0 ; col < lvl.height ; col++)
+        for (uint16_t col = 0; col < lvl.height; col++)
         {
             printf("%3u ", lvl.plane[plane][line][col]);
             fprintf(f, "%3u ", lvl.plane[plane][line][col]);
@@ -361,7 +400,7 @@ bool export_plane_to_txt(Level lvl, uint8_t plane)
     return true;
 }
 
-bool read_level_data(const Data levelDataFile, LevelHeader * level_headers, uint8_t level)
+bool read_level_data(const Data levelDataFile, LevelHeader *level_headers, uint8_t level)
 {
     // Read level data
     // Plane 0
@@ -383,24 +422,24 @@ bool read_level_data(const Data levelDataFile, LevelHeader * level_headers, uint
     return true;
 }
 
-Level create_level_from_files(const Data levelDataFile, LevelHeader * level_headers, uint8_t level)
+Level create_level_from_files(const Data levelDataFile, LevelHeader *level_headers, uint8_t level)
 {
     Level lvl = create_level(level, level_headers[level].width, level_headers[level].height, 2);
-    for (uint8_t planeNumber = 0 ; planeNumber < 2 ; planeNumber++)
+    for (uint8_t planeNumber = 0; planeNumber < 2; planeNumber++)
     {
-        uint16_t * source = NULL;
-        switch(planeNumber)
+        uint16_t *source = NULL;
+        switch (planeNumber)
         {
-            case 0:
-                source = level_headers[level].dataPlane0;
-                break;
-            case 1:
-                source = level_headers[level].dataPlane1;
-                break;
+        case 0:
+            source = level_headers[level].dataPlane0;
+            break;
+        case 1:
+            source = level_headers[level].dataPlane1;
+            break;
         }
-        for (uint16_t line = 0 ; line < level_headers[level].width ; line++)
+        for (uint16_t line = 0; line < level_headers[level].width; line++)
         {
-            for (uint16_t col = 0 ; col < level_headers[level].height ; col++)
+            for (uint16_t col = 0; col < level_headers[level].height; col++)
             {
                 lvl.plane[planeNumber][line][col] = source[line * 64 + col];
             }
@@ -413,13 +452,13 @@ Level create_level(uint8_t number, uint16_t width, uint16_t height, uint8_t plan
 {
     Level lvl = {.number = number, .width = width, .height = height, .planeNumber = planeNumber};
     lvl.plane = malloc(sizeof(uint16_t *) * planeNumber);
-    for (uint8_t planeIndex = 0 ; planeIndex < planeNumber ; planeIndex++)
+    for (uint8_t planeIndex = 0; planeIndex < planeNumber; planeIndex++)
     {
         lvl.plane[planeIndex] = malloc(sizeof(uint16_t *) * height);
-        for (uint8_t line = 0 ; line < height ; line++)
+        for (uint8_t line = 0; line < height; line++)
         {
             lvl.plane[planeIndex][line] = malloc(sizeof(uint16_t *) * width);
-            for (uint8_t column = 0 ; column < width ; column++)
+            for (uint8_t column = 0; column < width; column++)
             {
                 lvl.plane[planeIndex][line][column] = 0;
             }
@@ -488,9 +527,9 @@ bool is_dead_guard(uint16_t val)
     return val == 124;
 }
 
-Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[], bool grid, bool thin_wall)
+Image *level_to_image(Level lvl, uint8_t plane, Image *textures[], Image *sprites[], bool grid, bool thin_wall)
 {
-    Image * img = image_new(4096, 4096); // 64*64
+    Image *img = image_new(4096, 4096); // 64*64
     uint16_t unhandled_plane1 = 0;
     if (thin_wall)
     {
@@ -498,9 +537,9 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
     }
 
     // We go through the plane of the level
-    for (uint16_t line = 0 ; line < lvl.width ; line++)
+    for (uint16_t line = 0; line < lvl.width; line++)
     {
-        for (uint16_t col = 0 ; col < lvl.height ; col++)
+        for (uint16_t col = 0; col < lvl.height; col++)
         {
             // -- Plane 0 --
             uint16_t raw_tile = lvl.plane[0][line][col];
@@ -524,7 +563,7 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 {
                     tile = 60; // Elevator door
                 }
-                //printf("at=(%d, %d) tile = %u, raw_tile = %u, ptr = %p\n", col*64, line*64, tile, raw_tile, textures[tile]);
+                // printf("at=(%d, %d) tile = %u, raw_tile = %u, ptr = %p\n", col*64, line*64, tile, raw_tile, textures[tile]);
                 if (textures[tile] != NULL)
                 {
                     if (thin_wall && wall_is_not_enclosed(lvl, line, col))
@@ -540,7 +579,9 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
                 {
                     image_draw_rect(img, col * 64, line * 64, 64, 64, NEAR_WHITE, false);
                 }
-            } else {
+            }
+            else
+            {
                 printf("Plane 0 unhandled value : %u at %u,%u \n", raw_tile, line, col);
             }
             // -- Plane 1 --
@@ -552,84 +593,154 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             if (raw_sprite == 19) // Depart north
             {
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH, GREEN);
-            } else if (raw_sprite == 20) { // Depart east
+            }
+            else if (raw_sprite == 20)
+            { // Depart east
                 image_draw_arrow(img, col * 64, line * 64, 64, EAST, GREEN);
-            } else if (raw_sprite == 21) { // Depart south
+            }
+            else if (raw_sprite == 21)
+            { // Depart south
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, GREEN);
-            } else if (raw_sprite == 22) { // Depart west
+            }
+            else if (raw_sprite == 22)
+            { // Depart west
                 image_draw_arrow(img, col * 64, line * 64, 64, WEST, GREEN);
-            // -- Turning point ---------------------------------------------------------
-            } else if (raw_sprite == 90) { // turning east
+                // -- Turning point ---------------------------------------------------------
+            }
+            else if (raw_sprite == 90)
+            { // turning east
                 image_draw_arrow(img, col * 64, line * 64, 64, EAST, WHITE);
-            } else if (raw_sprite == 91) { // turning north east
+            }
+            else if (raw_sprite == 91)
+            { // turning north east
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH_EAST, WHITE);
-            } else if (raw_sprite == 92) { // turning north
+            }
+            else if (raw_sprite == 92)
+            { // turning north
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH, WHITE);
-            } else if (raw_sprite == 93) { // turning north west
+            }
+            else if (raw_sprite == 93)
+            { // turning north west
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH_WEST, WHITE);
-            } else if (raw_sprite == 94) { // turning west
+            }
+            else if (raw_sprite == 94)
+            { // turning west
                 image_draw_arrow(img, col * 64, line * 64, 64, WEST, WHITE);
-            } else if (raw_sprite == 95) { // turning south west
+            }
+            else if (raw_sprite == 95)
+            { // turning south west
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH_WEST, WHITE);
-            } else if (raw_sprite == 96) { // turning south
+            }
+            else if (raw_sprite == 96)
+            { // turning south
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, WHITE);
-            } else if (raw_sprite == 97) { // turning south east
+            }
+            else if (raw_sprite == 97)
+            { // turning south east
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH_EAST, WHITE);
-            // -- Objects ---------------------------------------------------------------
-            } else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL) {
+                // -- Objects ---------------------------------------------------------------
+            }
+            else if (raw_sprite >= 23 && raw_sprite <= 62 && sprites[raw_sprite + 42 - 64] != NULL)
+            {
                 // remove the first 64 walls with -64
                 image_draw_image(img, col * 64, line * 64, sprites[raw_sprite + 42 - 64]);
-            // -- Push wall -------------------------------------------------------------
-            } else if (raw_sprite == 98) {
+                // -- Push wall -------------------------------------------------------------
+            }
+            else if (raw_sprite == 98)
+            {
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
-            // -- Dead Guard ------------------------------------------------------------
-            } else if (raw_sprite == 124) {
+                // -- Dead Guard ------------------------------------------------------------
+            }
+            else if (raw_sprite == 124)
+            {
                 image_draw_image(img, col * 64, line * 64, sprites[158 - 64]);
-            // -- Guard -----------------------------------------------------------------
-            } else if (raw_sprite == 108 || raw_sprite == 144 || raw_sprite == 180) { // guard any/med/hard standing east
+                // -- Guard -----------------------------------------------------------------
+            }
+            else if (raw_sprite == 108 || raw_sprite == 144 || raw_sprite == 180)
+            { // guard any/med/hard standing east
                 sprite = 119 - 64;
-            } else if (raw_sprite == 109 || raw_sprite == 145 || raw_sprite == 181) { // guard any/med/hard standing north
+            }
+            else if (raw_sprite == 109 || raw_sprite == 145 || raw_sprite == 181)
+            { // guard any/med/hard standing north
                 sprite = 117 - 64;
-            } else if (raw_sprite == 110 || raw_sprite == 146 || raw_sprite == 182) { // guard any/med/hard standing west
+            }
+            else if (raw_sprite == 110 || raw_sprite == 146 || raw_sprite == 182)
+            { // guard any/med/hard standing west
                 sprite = 115 - 64;
-            } else if (raw_sprite == 111 || raw_sprite == 147 || raw_sprite == 183) { // guard any/med/hard standing south
+            }
+            else if (raw_sprite == 111 || raw_sprite == 147 || raw_sprite == 183)
+            { // guard any/med/hard standing south
                 sprite = 113 - 64;
-            } else if (raw_sprite == 112 || raw_sprite == 148 || raw_sprite == 184) { // guard any/med/hard patrolling east
+            }
+            else if (raw_sprite == 112 || raw_sprite == 148 || raw_sprite == 184)
+            { // guard any/med/hard patrolling east
                 sprite = 127 - 64;
-            } else if (raw_sprite == 113 || raw_sprite == 149 || raw_sprite == 185) { // guard any/med/hard patrolling north
+            }
+            else if (raw_sprite == 113 || raw_sprite == 149 || raw_sprite == 185)
+            { // guard any/med/hard patrolling north
                 sprite = 125 - 64;
-            } else if (raw_sprite == 114 || raw_sprite == 150 || raw_sprite == 186) { // guard any/med/hard patrolling west
+            }
+            else if (raw_sprite == 114 || raw_sprite == 150 || raw_sprite == 186)
+            { // guard any/med/hard patrolling west
                 sprite = 123 - 64;
-            } else if (raw_sprite == 115 || raw_sprite == 151 || raw_sprite == 187) { // guard any/med/hard patrolling south
+            }
+            else if (raw_sprite == 115 || raw_sprite == 151 || raw_sprite == 187)
+            { // guard any/med/hard patrolling south
                 sprite = 121 - 64;
-            // -- Dog ---------------------------------------------------------
-            } else if (raw_sprite == 138 || raw_sprite == 174 || raw_sprite == 210) { // dog any/med/hard patrolling east
+                // -- Dog ---------------------------------------------------------
+            }
+            else if (raw_sprite == 138 || raw_sprite == 174 || raw_sprite == 210)
+            { // dog any/med/hard patrolling east
                 sprite = 168 - 64;
-            } else if (raw_sprite == 139 || raw_sprite == 175 || raw_sprite == 211) { // dog any/med/hard patrolling north
+            }
+            else if (raw_sprite == 139 || raw_sprite == 175 || raw_sprite == 211)
+            { // dog any/med/hard patrolling north
                 sprite = 166 - 64;
-            } else if (raw_sprite == 140 || raw_sprite == 176 || raw_sprite == 212) { // dog any/med/hard patrolling west
+            }
+            else if (raw_sprite == 140 || raw_sprite == 176 || raw_sprite == 212)
+            { // dog any/med/hard patrolling west
                 sprite = 164 - 64;
-            } else if (raw_sprite == 141 || raw_sprite == 177 || raw_sprite == 213) { // dog any/med/hard patrolling south
+            }
+            else if (raw_sprite == 141 || raw_sprite == 177 || raw_sprite == 213)
+            { // dog any/med/hard patrolling south
                 sprite = 162 - 64;
-            // -- SS ----------------------------------------------------------
-            } else if (raw_sprite == 126 || raw_sprite == 162 || raw_sprite == 198) { // ss any/med/hard standing east
+                // -- SS ----------------------------------------------------------
+            }
+            else if (raw_sprite == 126 || raw_sprite == 162 || raw_sprite == 198)
+            { // ss any/med/hard standing east
                 sprite = 207 - 64;
-            } else if (raw_sprite == 127 || raw_sprite == 163 || raw_sprite == 199) { // ss any/med/hard standing north
+            }
+            else if (raw_sprite == 127 || raw_sprite == 163 || raw_sprite == 199)
+            { // ss any/med/hard standing north
                 sprite = 205 - 64;
-            } else if (raw_sprite == 128 || raw_sprite == 164 || raw_sprite == 200) { // ss any/med/hard standing west
+            }
+            else if (raw_sprite == 128 || raw_sprite == 164 || raw_sprite == 200)
+            { // ss any/med/hard standing west
                 sprite = 203 - 64;
-            } else if (raw_sprite == 129 || raw_sprite == 165 || raw_sprite == 201) { // ss any/med/hard standing south
+            }
+            else if (raw_sprite == 129 || raw_sprite == 165 || raw_sprite == 201)
+            { // ss any/med/hard standing south
                 sprite = 201 - 64;
-            } else if (raw_sprite == 130 || raw_sprite == 166 || raw_sprite == 202) { // ss any/med/hard patrolling east
+            }
+            else if (raw_sprite == 130 || raw_sprite == 166 || raw_sprite == 202)
+            { // ss any/med/hard patrolling east
                 sprite = 215 - 64;
-            } else if (raw_sprite == 131 || raw_sprite == 167 || raw_sprite == 203) { // ss any/med/hard patrolling north
+            }
+            else if (raw_sprite == 131 || raw_sprite == 167 || raw_sprite == 203)
+            { // ss any/med/hard patrolling north
                 sprite = 213 - 64;
-            } else if (raw_sprite == 132 || raw_sprite == 168 || raw_sprite == 204) { // ss any/med/hard patrolling west
+            }
+            else if (raw_sprite == 132 || raw_sprite == 168 || raw_sprite == 204)
+            { // ss any/med/hard patrolling west
                 sprite = 211 - 64;
-            } else if (raw_sprite == 133 || raw_sprite == 169 || raw_sprite == 205) { // ss any/med/hard patrolling south
+            }
+            else if (raw_sprite == 133 || raw_sprite == 169 || raw_sprite == 205)
+            { // ss any/med/hard patrolling south
                 sprite = 209 - 64;
-            // -- Unhandled ---------------------------------------------------
-            } else if (raw_sprite != 0) { // 0 is for empty
+                // -- Unhandled ---------------------------------------------------
+            }
+            else if (raw_sprite != 0)
+            { // 0 is for empty
                 printf("Plane 1 unhandled value : %u at %u,%u \n", raw_sprite, line, col);
                 unhandled_plane1 += 1;
             }
@@ -645,9 +756,10 @@ Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * spr
             {
                 Rect rect = image_get_visible_rectangle(sprites[sprite], MAGENTA, 2);
                 image_draw_rect(img, col * 64 + rect.x, line * 64 + rect.y - 3, rect.width, rect.height, ORANGE, false);
-            } else if ((raw_sprite >= 180 && raw_sprite <= 187) || // guard standing and patrolling
-                       (raw_sprite >= 210 && raw_sprite <= 213) || // dog patrolling
-                       (raw_sprite >= 198 && raw_sprite <= 205))   // ss standing and patrolling
+            }
+            else if ((raw_sprite >= 180 && raw_sprite <= 187) || // guard standing and patrolling
+                     (raw_sprite >= 210 && raw_sprite <= 213) || // dog patrolling
+                     (raw_sprite >= 198 && raw_sprite <= 205))   // ss standing and patrolling
             {
                 Rect rect = image_get_visible_rectangle(sprites[sprite], MAGENTA, 2);
                 image_draw_rect(img, col * 64 + rect.x, line * 64 + rect.y - 3, rect.width, rect.height, RED, false);
