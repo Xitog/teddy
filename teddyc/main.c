@@ -331,6 +331,58 @@ bool command_help()
     return true;
 }
 
+bool command_check(CommandParser cp, Data levelDataFile, LevelHeader *level_headers, Image **textures)
+{
+    if (command_parser_left(cp) == 0 || !command_parser_is_level(cp))
+    {
+        printf("[info] You must indicate a level with format EXMY or eXmY.\n");
+        return false;
+    }
+    LevelIdentifier identifier = str_to_level_identifier(command_parser_advance(&cp));
+    Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
+    uint32_t unknown = 0;
+    for (uint16_t line = 0; line < lvl.width; line++)
+    {
+        for (uint16_t col = 0; col < lvl.height; col++)
+        {
+            uint16_t val0 = lvl.plane[0][line][col];
+            uint16_t val1 = lvl.plane[1][line][col];
+
+            if (val0 <= 64 && textures[val0] == NULL)
+            {
+                printf(">>> [Plane 0] Unloaded texture at line=%u col=%u: %u\n", line, col, val0);
+                unknown += 1;
+            }
+            else if (val0 != 90 && val0 != 91 && val0 != 92 && val0 != 93 && val0 != 100 && val0 < 106 && val0 > 143)
+            {
+                printf(">>> [Plane 0] Unknown value at line=%u col=%u: %u\n", line, col, val0);
+                unknown += 1;
+            }
+
+            if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_ss(val1) &&
+                !is_starting_point(val1) && !is_turning_point(val1) && !is_object(val1) &&
+                !is_pushwall(val1) && !is_dead_guard(val1))
+            {
+                printf(">>> [Plane 1] Unknown value at line=%u col=%u: %u\n", line, col, val1);
+                unknown += 1;
+            }
+        }
+    }
+    if (unknown == 0)
+    {
+        setConsoleColorGreen();
+        printf("Level e%um%u : all values handled.\n", identifier.episode, identifier.level);
+        setConsoleColorDefault();
+    }
+    else
+    {
+        setConsoleColorRed();
+        printf("Level e%um%u : %u unknown values.\n", identifier.episode, identifier.level, unknown);
+        setConsoleColorDefault();
+    }
+    return true;
+}
+
 // Aka info, count, stats or stat
 bool command_info(CommandParser cp, Data levelDataFile, LevelHeader *level_headers)
 {
@@ -350,6 +402,63 @@ bool command_info(CommandParser cp, Data levelDataFile, LevelHeader *level_heade
     level_stat(lvl, by_count);
     return true;
 }
+
+bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_headers, Image **textures, Image **sprites)
+{
+    if (command_parser_left(cp) == 0 || !command_parser_is_level(cp))
+    {
+        printf("[info] You must indicate a level with format EXMY or eXmY.\n");
+        return false;
+    }
+    char file_name[255];
+    LevelIdentifier identifier = str_to_level_identifier(command_parser_advance(&cp));
+    bool png = false;
+    bool bmp = true;
+    if (command_parser_left(cp) > 0)
+    {
+        if (command_parser_is_string(cp, "png"))
+        {
+            png = true;
+            bmp = false;
+        }
+        else if (command_parser_is_string(cp, "bmp"))
+        {
+            png = false;
+            bmp = true;
+        }
+        else if (command_parser_is_string(cp, "all"))
+        {
+            png = true;
+            bmp = true;
+        }
+        command_parser_advance(&cp);
+    }
+    printf("Exporting level e%um%u\n", identifier.episode, identifier.level);
+    Image *level_image = NULL;
+    bool NO_GRID = false;
+    bool THIN_WALL = true;
+    Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
+    level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
+    if (level_image != NULL)
+    {
+        if (bmp)
+        {
+            sprintf(file_name, "e%um%u.bmp", identifier.episode, identifier.level);
+            image_save_to_bmp(level_image, file_name);
+        }
+        if (png)
+        {
+            sprintf(file_name, "e%um%u.png", identifier.episode, identifier.level);
+            image_save_to_png(level_image, file_name);
+        }
+        image_free(level_image);
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// Main
+//-----------------------------------------------------------------------------
 
 int main(int argc, const char *argv[])
 {
@@ -509,17 +618,12 @@ int main(int argc, const char *argv[])
 
     // -- Commands ----------------------------------------------------------------------
 
-    // id : identify game and version
-    // list : list all recognized files
-    // asset X : extract asset at index X (or all) in VSWAP in the correct format (bmp)
-    // map X F : extract map number X (or all) in F format (txt, csv or bmp)
-
     bool good = false;
-    if (argc == 1 || (argc == 2 && str_is(argv[1], "help")))
+    if (argc == 1)
     {
         good = command_help();
     }
-    else if (argc >= 2)
+    else // argc >= 2
     {
         CommandParser cp = command_parser_create(1, argc, argv);
         if (command_parser_is_string(cp, "info") ||
@@ -530,6 +634,35 @@ int main(int argc, const char *argv[])
             command_parser_advance(&cp);
             good = command_info(cp, levelDataFile, level_headers);
         }
+        else if (command_parser_is_string(cp, "help"))
+        {
+            command_parser_advance(&cp);
+            good = command_help();
+        }
+        else if (command_parser_is_string(cp, "check"))
+        {
+            command_parser_advance(&cp);
+            good = command_check(cp, levelDataFile, level_headers, textures);
+        }
+        else if (command_parser_is_string(cp, "id"))
+        {
+            // identify game and version
+        }
+        else if (command_parser_is_string(cp, "list"))
+        {
+            // list all files
+        }
+        else if (command_parser_is_string(cp, "export"))
+        {
+            command_parser_advance(&cp);
+            good = command_export(cp, levelDataFile, level_headers, textures, sprites);
+        }
+    }
+
+    /*
+    else if (argc >= 2)
+    {
+
         else if (str_is(argv[1], "extract"))
         {
             if (argc == 2)
@@ -550,116 +683,8 @@ int main(int argc, const char *argv[])
                 }
             }
         }
-        else if (str_is(argv[1], "export"))
-        {
-            if (argc == 2 || !str_is_valid_level(argv[2]))
-            {
-                printf("You must indicate a level with format EXMY or eXmY to export.\n");
-            }
-            else
-            {
-                bool png = false;
-                bool bmp = true;
-                if (argc == 4)
-                {
-                    if (str_is(argv[3], "png"))
-                    {
-                        png = true;
-                        bmp = false;
-                    }
-                    else if (str_is(argv[3], "bmp"))
-                    {
-                        png = false;
-                        bmp = true;
-                    }
-                    else if (str_is(argv[3], "all"))
-                    {
-                        png = true;
-                        bmp = true;
-                    }
-                }
-                LevelIdentifier identifier = str_to_level_identifier(argv[2]);
-                good = true;
-                printf("Exporting level e%um%u\n", identifier.episode, identifier.level);
-                Image *level_image = NULL;
-                bool NO_GRID = false;
-                bool THIN_WALL = true;
-                Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
-                level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
-                if (level_image != NULL)
-                {
-                    if (bmp)
-                    {
-                        sprintf(file_name, "e%um%u.bmp", identifier.episode, identifier.level);
-                        image_save_to_bmp(level_image, file_name);
-                    }
-                    if (png)
-                    {
-                        sprintf(file_name, "e%um%u.png", identifier.episode, identifier.level);
-                        image_save_to_png(level_image, file_name);
-                    }
-                    image_free(level_image);
-                }
-            }
-        }
-        else if (str_is(argv[1], "check"))
-        {
-            if (argc == 2 || !str_is_valid_level(argv[2]))
-            {
-                printf("You must indicate a level with format EXMY or eXmY to check.\n");
-            }
-            else
-            {
-                LevelIdentifier identifier = str_to_level_identifier(argv[2]);
-                Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
-                uint32_t unknown = 0;
-                for (uint16_t line = 0; line < lvl.width; line++)
-                {
-                    for (uint16_t col = 0; col < lvl.height; col++)
-                    {
-                        uint16_t val0 = lvl.plane[0][line][col];
-                        uint16_t val1 = lvl.plane[1][line][col];
+        */
 
-                        if (val0 <= 64 && textures[val0] == NULL)
-                        {
-                            printf(">>> [Plane 0] Unloaded texture at line=%u col=%u: %u\n", line, col, val0);
-                            unknown += 1;
-                        }
-                        else if (val0 != 90 && val0 != 91 && val0 != 92 && val0 != 93 && val0 != 100 && val0 < 106 && val0 > 143)
-                        {
-                            printf(">>> [Plane 0] Unknown value at line=%u col=%u: %u\n", line, col, val0);
-                            unknown += 1;
-                        }
-
-                        if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_ss(val1) &&
-                            !is_starting_point(val1) && !is_turning_point(val1) && !is_object(val1) &&
-                            !is_pushwall(val1) && !is_dead_guard(val1))
-                        {
-                            printf(">>> [Plane 1] Unknown value at line=%u col=%u: %u\n", line, col, val1);
-                            unknown += 1;
-                        }
-                    }
-                }
-                good = true;
-                if (unknown == 0)
-                {
-                    setConsoleColorGreen();
-                    printf("Level e%um%u : all values handled.\n", identifier.episode, identifier.level);
-                    setConsoleColorDefault();
-                }
-                else
-                {
-                    setConsoleColorRed();
-                    printf("Level e%um%u : %u unknown values.\n", identifier.episode, identifier.level, unknown);
-                    setConsoleColorDefault();
-                }
-            }
-        }
-        else if (str_is(argv[1], "list"))
-        {
-            printf("List all files\n");
-        }
-    }
     // Console
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!good)
