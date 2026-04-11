@@ -34,24 +34,6 @@ const char *ASSET_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\
 
 const uint8_t ALL_PLANES = 3;
 
-void setConsoleColorGreen()
-{
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
-}
-
-void setConsoleColorRed()
-{
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_RED);
-}
-
-void setConsoleColorDefault()
-{
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-}
-
 void first_five_pixel(const Data assetDataFile, AssetHeader assetHeader, uint16_t index)
 {
     uint32_t ptr = assetHeader.pointers[index];
@@ -285,13 +267,11 @@ int command_parser_size(CommandParser cp)
 
 int command_parser_left(CommandParser cp)
 {
-    printf("Left : %d\n", cp.size - cp.index);
     return cp.size - cp.index;
 }
 
 const char * command_parser_get_current(CommandParser cp)
 {
-    printf("Current : %s at %u\n", cp.elements[cp.index], cp.index);
     return cp.elements[cp.index];
 }
 
@@ -327,6 +307,8 @@ bool command_help()
     printf("info | count | stats | stat <level> : map information with statistics\n"); // count of objects
     printf("export | extract <level> <type>     : export a <level> to <type> (png, bmp or all)\n");
     printf("check <level>                       : check if everything is known for <level>\n");
+    printf("list                                : list files of current dir with last modified date\n");
+    printf("table <headers>                     : display information tables\n");
     printf("Every level must be in the format EXMY or eXmY\n");
     return true;
 }
@@ -456,6 +438,36 @@ bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_hea
     return true;
 }
 
+bool command_list(CommandParser cp)
+{
+    getBuildInfo();
+    char *cwd = getCurrentDir();
+    printf("Current dir is : %s\n", cwd);
+    getFiles(cwd);
+    printf("\n-----------------------------------------\n");
+    getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
+    return true;
+}
+
+bool command_table(CommandParser cp, Header header)
+{
+    if (command_parser_left(cp) == 0)
+    {
+        printf("[info] You must choose a table to see between headers.\n");
+        return false;
+    }
+    if (command_parser_is_string(cp, "headers"))
+    {
+        display_header(&header);
+    }
+    else
+    {
+        printf("[info] Invalid table: %s.\n", command_parser_get_current(cp));
+        return false;
+    }
+    return true;
+}
+
 //-----------------------------------------------------------------------------
 // Main
 //-----------------------------------------------------------------------------
@@ -467,8 +479,9 @@ int main(int argc, const char *argv[])
     uint32_t level_index = 0;
     bool order_by_count = false;
 
-    // -- Load data (reading level files) -----------------------------------------------
+    // -- Loading data -----------------------------------------------------------------
 
+    // Reading level headers file
     Data headerDataFile = {.data = NULL, .size = 0};
     bool ok = load_file(HEADER_FILE, &headerDataFile);
     if (!ok)
@@ -481,7 +494,8 @@ int main(int argc, const char *argv[])
     {
         return EXIT_FAILURE;
     }
-    display_header(&header);
+
+    // Reading level file
     Data levelDataFile = {.data = NULL, .size = 0};
     ok = load_file(LEVEL_FILE, &levelDataFile);
     if (!ok)
@@ -490,7 +504,7 @@ int main(int argc, const char *argv[])
     }
     // Read level headers
     LevelHeader *level_headers = malloc(sizeof(LevelHeader) * header.number);
-    printf("Level name : W x H | Plane 0 [Size] | Plane 1 [Size] | Plane 2 [Size] |\n");
+    printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
     for (uint8_t i = 0; i < header.number; i++)
     {
         ok = read_level_header(levelDataFile, header.level_header_ptr[i], &level_headers[i]);
@@ -650,7 +664,13 @@ int main(int argc, const char *argv[])
         }
         else if (command_parser_is_string(cp, "list"))
         {
-            // list all files
+            command_parser_advance(&cp);
+            good = command_list(cp);
+        }
+        else if (command_parser_is_string(cp, "table"))
+        {
+            command_parser_advance(&cp);
+            good = command_table(cp, header);
         }
         else if (command_parser_is_string(cp, "export"))
         {
@@ -716,13 +736,6 @@ int main(int argc, const char *argv[])
             return EXIT_FAILURE;
         }
     }
-
-    getBuildInfo();
-    char *cwd = getCurrentDir();
-    printf("Current dir is : %s\n", cwd);
-    getFiles(cwd);
-    printf("\n-----------------------------------------\n");
-    getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
 
     Image *img = image_new(100, 100);
     image_draw_line(img, 0, 0, 99, 99, RED);

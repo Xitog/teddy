@@ -13,4 +13,8 @@ void getBuildInfo();
 char * getCurrentDir();
 void getFiles(const char * dir_path);
 
+void setConsoleColorGreen();
+void setConsoleColorRed();
+void setConsoleColorDefault();
+
 #endif

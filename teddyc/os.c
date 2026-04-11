@@ -65,3 +65,21 @@ void getFiles(const char * dir_path)
     FindClose(search_handle);
     free(buffer);
 }
+
+void setConsoleColorGreen()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+}
+
+void setConsoleColorRed()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_RED);
+}
+
+void setConsoleColorDefault()
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}

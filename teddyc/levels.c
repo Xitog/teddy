@@ -5,9 +5,10 @@ void display_header(const Header *header)
     printf("------------------------------------------------------------\n");
     printf("Magic number (ABCD) : %d (%X)\n", header->magic_word, header->magic_word);
     printf("Number of levels    : %d\n", header->number);
+    printf("| Index | Offset [hexa] |\n");
     for (uint8_t i = 0; i < header->number; i++)
     {
-        printf("    %03d. %06u %x\n", i + 1, header->level_header_ptr[i], header->level_header_ptr[i]);
+        printf("| %03d   | %06u [%4x] |\n", i + 1, header->level_header_ptr[i], header->level_header_ptr[i]);
     }
     printf("------------------------------------------------------------\n");
 }
