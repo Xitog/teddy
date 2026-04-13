@@ -183,9 +183,9 @@ bool str_is(const char *value, const char *expected)
 
 typedef struct LevelIdentifierStruct
 {
-    uint8_t episode;        // E1
-    uint8_t level;          // M1
-    uint8_t index;          // = 0
+    uint8_t episode; // E1
+    uint8_t level;   // M1
+    uint8_t index;   // = 0
 } LevelIdentifier;
 
 bool str_is_valid_level(const char *value)
@@ -236,7 +236,7 @@ LevelIdentifier str_to_level_identifier(const char *value)
             level = 10;
         }
     }
-    LevelIdentifier li = { .episode = episode, .level = level, .index = level - 1}; // TODO: Handle E>1
+    LevelIdentifier li = {.episode = episode, .level = level, .index = level - 1}; // TODO: Handle E>1
     return li;
 }
 
@@ -270,14 +270,14 @@ int command_parser_left(CommandParser cp)
     return cp.size - cp.index;
 }
 
-const char * command_parser_get_current(CommandParser cp)
+const char *command_parser_get_current(CommandParser cp)
 {
     return cp.elements[cp.index];
 }
 
-const char * command_parser_advance(CommandParser *cp)
+const char *command_parser_advance(CommandParser *cp)
 {
-    const char * old = cp->elements[cp->index];
+    const char *old = cp->elements[cp->index];
     cp->index += 1;
     return old;
 }
@@ -308,7 +308,7 @@ bool command_help()
     printf("export | extract <level> <type>     : export a <level> to <type> (png, bmp or all)\n");
     printf("check <level>                       : check if everything is known for <level>\n");
     printf("list                                : list files of current dir with last modified date\n");
-    printf("table <headers>                     : display information tables\n");
+    printf("table [headers, levels]             : display information tables\n");
     printf("Every level must be in the format EXMY or eXmY\n");
     return true;
 }
@@ -352,15 +352,15 @@ bool command_check(CommandParser cp, Data levelDataFile, LevelHeader *level_head
     }
     if (unknown == 0)
     {
-        setConsoleColorGreen();
+        set_console_color(CONSOLE_GREEN);
         printf("Level e%um%u : all values handled.\n", identifier.episode, identifier.level);
-        setConsoleColorDefault();
+        set_console_color_default();
     }
     else
     {
-        setConsoleColorRed();
+        set_console_color(CONSOLE_RED);
         printf("Level e%um%u : %u unknown values.\n", identifier.episode, identifier.level, unknown);
-        setConsoleColorDefault();
+        set_console_color_default();
     }
     return true;
 }
@@ -440,16 +440,16 @@ bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_hea
 
 bool command_list(CommandParser cp)
 {
-    getBuildInfo();
-    char *cwd = getCurrentDir();
+    get_build_info();
+    char *cwd = get_current_dir();
     printf("Current dir is : %s\n", cwd);
-    getFiles(cwd);
+    get_files(cwd);
     printf("\n-----------------------------------------\n");
-    getFiles("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
+    get_files("D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0");
     return true;
 }
 
-bool command_table(CommandParser cp, Header header)
+bool command_table(CommandParser cp, Header header, LevelHeader *level_headers)
 {
     if (command_parser_left(cp) == 0)
     {
@@ -459,6 +459,14 @@ bool command_table(CommandParser cp, Header header)
     if (command_parser_is_string(cp, "headers"))
     {
         display_header(&header);
+    }
+    else if (command_parser_is_string(cp, "levels"))
+    {
+        printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
+        for (uint8_t i = 0; i < header.number; i++)
+        {
+            display_level_header(&level_headers[i]);
+        }
     }
     else
     {
@@ -504,7 +512,7 @@ int main(int argc, const char *argv[])
     }
     // Read level headers
     LevelHeader *level_headers = malloc(sizeof(LevelHeader) * header.number);
-    printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
+    //printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
     for (uint8_t i = 0; i < header.number; i++)
     {
         ok = read_level_header(levelDataFile, header.level_header_ptr[i], &level_headers[i]);
@@ -512,7 +520,7 @@ int main(int argc, const char *argv[])
         {
             return EXIT_FAILURE;
         }
-        display_level_header(&level_headers[i]);
+        //display_level_header(&level_headers[i]);
         ok = read_level_data(levelDataFile, level_headers, i);
         if (!ok)
         {
@@ -670,7 +678,7 @@ int main(int argc, const char *argv[])
         else if (command_parser_is_string(cp, "table"))
         {
             command_parser_advance(&cp);
-            good = command_table(cp, header);
+            good = command_table(cp, header, level_headers);
         }
         else if (command_parser_is_string(cp, "export"))
         {
@@ -709,16 +717,16 @@ int main(int argc, const char *argv[])
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!good)
     {
-        SetConsoleTextAttribute(console, FOREGROUND_RED);
+        set_console_color(CONSOLE_RED);
         printf("Goodbye\n");
-        SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        set_console_color_default();
         return EXIT_FAILURE;
     }
     else
     {
-        SetConsoleTextAttribute(console, FOREGROUND_GREEN); // | FOREGROUND_GREEN | FOREGROUND_BLUE); // white
+        set_console_color(CONSOLE_GREEN);
         printf("Goodbye\n");
-        SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        set_console_color_default();
         return EXIT_SUCCESS;
     }
 
@@ -758,28 +766,6 @@ int main(int argc, const char *argv[])
         free(cmp_data);
     }
     printf("Compressed from %llu to %llu bytes\n", (uint64_t)src_len, (uint64_t)cmp_len);
-
-    // Visible rect
-    Image *guard = sprites[119 - 64];
-    Image *dog = sprites[168 - 64];
-    Image *dg1 = image_new(128, 128);
-    image_fill(dg1, WHITE);
-    image_draw_image(dg1, 0, 0, dog);
-
-    Rect rect = image_get_visible_rectangle(guard, MAGENTA, 0);
-    printf("Rect guard, no spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
-    rect = image_get_visible_rectangle(guard, MAGENTA, 2);
-    printf("Rect guard, 02 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
-    rect = image_get_visible_rectangle(dog, MAGENTA, 0);
-    printf("Rect dog,   no spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
-    rect = image_get_visible_rectangle(dog, MAGENTA, 1);
-    printf("Rect dog,   01 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
-    image_draw_rect(dg1, rect.x, rect.y, rect.width, rect.height, ORANGE, false);
-    rect = image_get_visible_rectangle(dog, MAGENTA, 2);
-    printf("Rect dog,   02 spaces = %u %u %u %u\n", rect.x, rect.y, rect.width, rect.height);
-    image_draw_rect(dg1, rect.x, rect.y, rect.width, rect.height, RED, false);
-    image_save_to_bmp(dg1, "dg1.bmp");
-    image_free(dg1);
 
     return EXIT_SUCCESS;
 }

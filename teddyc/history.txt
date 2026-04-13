@@ -1,5 +1,20 @@
 Wolf3dData Project History and links
 
+13/04/2026
+Mis toutes les fonctions os.h/os.c en snake_case pour cohérence
+Export de e1m7 et e1m8
+Mis dans la fonction commander_table le display des levels headers.
+
+11/04/2026
+Export de e1m6
+Transformation de list sous la forme de commande
+Ajout commande table headers pour voir les headers du fichier MAPHEAD
+Déplacement des fonctions de la console dans os.h et os.c plutôt que dans main.h
+
+08/04/2026
+Réorganisation des commandes check & export
+Check + export de e1m5
+
 07/04/2026
 Fusion des commandes info et count/stat
 

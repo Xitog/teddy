@@ -1,6 +1,6 @@
 #include "os.h"
 
-void getBuildInfo()
+void get_build_info()
 {
     #ifdef _WIN32
     printf("Compiled for Win32\n"); // Win32 1937
@@ -11,7 +11,7 @@ void getBuildInfo()
     printf("Version of the compiler: %u\n", _MSC_VER);
 }
 
-char * getCurrentDir()
+char * get_current_dir()
 {
     DWORD size = GetCurrentDirectory(0, NULL);
     char * dirname = malloc(sizeof(char) * size);
@@ -19,7 +19,7 @@ char * getCurrentDir()
     return dirname;
 }
 
-void getFiles(const char * dir_path)
+void get_files(const char * dir_path)
 {
     // m y d i r \0 strlen = 5 +1 = 6
     // _ _ _ _ _ _  _ _ buffer = 8
@@ -31,7 +31,7 @@ void getFiles(const char * dir_path)
     buffer[s - 1] = '\\';
     buffer[s] = '*';
     buffer[s + 1] = '\0';
-    printf("DEBUG : getFiles for : %s\n", dir_path);
+    printf("DEBUG : get_files for : %s\n", dir_path);
     printf("DEBUG : buffer is :    %s\n", buffer);
     WIN32_FIND_DATAA file_info;
     HANDLE search_handle = FindFirstFileA(buffer, &file_info);
@@ -66,19 +66,29 @@ void getFiles(const char * dir_path)
     free(buffer);
 }
 
-void setConsoleColorGreen()
+void set_console_color(ConsoleColor cc)
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+    DWORD dw;
+    if (cc == CONSOLE_GREEN)
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+    }
+    else if (cc == CONSOLE_RED)
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_RED);
+    }
+    else if (cc == CONSOLE_BLUE)
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_BLUE);
+    }
+    else if (cc = CONSOLE_WHITE)
+    {
+        SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+    }
 }
 
-void setConsoleColorRed()
-{
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(console, FOREGROUND_RED);
-}
-
-void setConsoleColorDefault()
+void set_console_color_default()
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);

@@ -21,11 +21,7 @@ bool load_file(const char * file_path, Data * mem)
         return false;
     }
     mem->size = get_file_size(f);
-    printf("------------------------------------------------------------\n");
-    printf("Loading file...\n");
-    printf("File path           : %s\n", file_path);
-    printf("File size           : %u bytes\n", mem->size);
-    printf("------------------------------------------------------------\n");
+    printf("Loading file: %s [%u bytes]\n", file_path, mem->size);
     mem->data = malloc(sizeof(uint8_t) * mem->size);
     fread(mem->data, sizeof(uint8_t), mem->size, f);
     fclose(f);
