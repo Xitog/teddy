@@ -1,5 +1,10 @@
 Wolf3dData Project History and links
 
+24/04/2026
+Gestion du boss n°1 et du endgame trigger
+Export de e1m9
+Rajout de extract comme synonyme de export
+
 13/04/2026
 Mis toutes les fonctions os.h/os.c en snake_case pour cohérence
 Export de e1m7 et e1m8

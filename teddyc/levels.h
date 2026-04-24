@@ -55,8 +55,11 @@ bool is_guard(uint16_t val);
 bool is_dog(uint16_t val);
 bool is_ss(uint16_t val);
 bool is_pushwall(uint16_t val);
+bool is_endgame_trigger(uint16_t val);
 bool is_dead_guard(uint16_t val);
+bool is_boss(uint16_t val);
 
 Image * level_to_image(Level lvl, uint8_t plane, Image * textures[], Image * sprites[], bool grid, bool thin_wall);
+void level_to_json_file(Level lvl, const char *file_name);
 
 #endif

@@ -57,45 +57,59 @@ void image_draw_arrow(Image *dest, uint32_t x, uint32_t y, uint32_t size, Orient
         image_draw_line(dest, x + 32, y + 10, x + 32, y + 64 - 10, color); // |
         image_draw_line(dest, x + 31, y + 10, x + 15, y + 30, color);
         image_draw_line(dest, x + 32, y + 10, x + 48, y + 30, color);
-    } else if (orientation == NORTH_EAST) {
+    }
+    else if (orientation == NORTH_EAST)
+    {
         image_draw_line(dest, x + 10, y + 64 - 10, x + 64 - 10, y + 10, color); // /
         image_draw_line(dest, x + 10, y + 64 - 11, x + 64 - 11, y + 10, color); // /
-        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color); // /
-        image_draw_line(dest, x + 31, y + 10, x + 64 - 10, y + 10, color); // --
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color);  // /
+        image_draw_line(dest, x + 31, y + 10, x + 64 - 10, y + 10, color);      // --
         image_draw_line(dest, x + 64 - 10, y + 10, x + 64 - 10, y + 31, color); // |
-    } else if (orientation == EAST) {
+    }
+    else if (orientation == EAST)
+    {
         image_draw_line(dest, x + 10, y + 31, x + 64 - 10, y + 31, color); // -
         image_draw_line(dest, x + 10, y + 32, x + 64 - 10, y + 32, color); // -
         image_draw_line(dest, x + 64 - 10, y + 31, x + 64 - 30, y + 15, color);
         image_draw_line(dest, x + 64 - 10, y + 32, x + 64 - 30, y + 48, color);
-    } else if (orientation == SOUTH_EAST) {
-        image_draw_line(dest, x + 10, y + 10, x + 64 - 10, y + 64 - 10, color); // \s
-        image_draw_line(dest, x + 10, y + 10, x + 64 - 11, y + 64 - 11, color); // \s
-        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color); // \s
-        image_draw_line(dest, x + 31, y + 64 - 9, x + 64 - 10, y + 64 - 9, color); // --
+    }
+    else if (orientation == SOUTH_EAST)
+    {
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 10, y + 64 - 10, color);     // \s
+        image_draw_line(dest, x + 10, y + 10, x + 64 - 11, y + 64 - 11, color);     // \s
+        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color);      // \s
+        image_draw_line(dest, x + 31, y + 64 - 9, x + 64 - 10, y + 64 - 9, color);  // --
         image_draw_line(dest, x + 64 - 10, y + 64 - 9, x + 64 - 10, y + 31, color); // |
-    } else if (orientation == SOUTH) {
+    }
+    else if (orientation == SOUTH)
+    {
         image_draw_line(dest, x + 31, y + 10, x + 31, y + 64 - 10, color); // |
         image_draw_line(dest, x + 32, y + 10, x + 32, y + 64 - 10, color); // |
         image_draw_line(dest, x + 31, y + 64 - 10, x + 15, y + 64 - 30, color);
         image_draw_line(dest, x + 32, y + 64 - 10, x + 48, y + 64 - 30, color);
-    } else if (orientation == SOUTH_WEST) {
+    }
+    else if (orientation == SOUTH_WEST)
+    {
         image_draw_line(dest, x + 10, y + 64 - 10, x + 64 - 10, y + 10, color); // /
         image_draw_line(dest, x + 10, y + 64 - 11, x + 64 - 11, y + 10, color); // /
-        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color); // /
-        image_draw_line(dest, x + 10, y + 64 - 9, x + 31, y + 64 - 9, color); // --
-        image_draw_line(dest, x + 10, y + 64 - 9, x + 10, y + 31, color); // |
-    } else if (orientation == WEST) {
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 64 - 10, y + 11, color);  // /
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 31, y + 64 - 9, color);   // --
+        image_draw_line(dest, x + 10, y + 64 - 9, x + 10, y + 31, color);       // |
+    }
+    else if (orientation == WEST)
+    {
         image_draw_line(dest, x + 10, y + 31, x + 64 - 10, y + 31, color); // -
         image_draw_line(dest, x + 10, y + 32, x + 64 - 10, y + 32, color); // -
         image_draw_line(dest, x + 10, y + 31, x + 30, y + 15, color);
         image_draw_line(dest, x + 10, y + 32, x + 30, y + 48, color);
-    } else if (orientation == NORTH_WEST) {
+    }
+    else if (orientation == NORTH_WEST)
+    {
         image_draw_line(dest, x + 10, y + 10, x + 64 - 10, y + 64 - 10, color); // \s
         image_draw_line(dest, x + 10, y + 10, x + 64 - 11, y + 64 - 11, color); // \s
-        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color); // \s
-        image_draw_line(dest, x + 31, y + 10, x + 10, y + 10, color); // --
-        image_draw_line(dest, x + 10, y + 10, x + 10, y + 31, color); // |
+        image_draw_line(dest, x + 10, y + 11, x + 64 - 10, y + 64 - 9, color);  // \s
+        image_draw_line(dest, x + 31, y + 10, x + 10, y + 10, color);           // --
+        image_draw_line(dest, x + 10, y + 10, x + 10, y + 31, color);           // |
     }
 }
 
@@ -201,7 +215,7 @@ void image_draw_rect(Image *img, uint32_t x, uint32_t y, uint32_t width, uint32_
     }
 }
 
-void image_draw_rect2(Image * img, Rect rect, Pixel color, bool filled)
+void image_draw_rect2(Image *img, Rect rect, Pixel color, bool filled)
 {
     image_draw_rect(img, rect.x, rect.y, rect.width, rect.height, color, filled);
 }
@@ -261,9 +275,7 @@ Rect image_get_visible_rectangle(Image *img, Pixel emptyColor, uint32_t space)
             }
         }
     }
-    Rect rect = {.x = min_x - space, .y = min_y - space,
-        .width = (max_x + space) - (min_x - space) + 1,
-        .height = (max_y + space) - (min_y - space) + 1};
+    Rect rect = {.x = min_x - space, .y = min_y - space, .width = (max_x + space) - (min_x - space) + 1, .height = (max_y + space) - (min_y - space) + 1};
     return rect;
 }
 
@@ -314,11 +326,11 @@ void image_save_to_bmp(Image *img, const char *file_path)
     fwrite((char *)buf, 1, imagesize, f);
     fclose(f);
     free(buf);
-    printf("Saved at : %s\n", file_path);
+    printf("[info] Saved at : %s\n", file_path);
 }
 
 // from https://www.w3.org/TR/png/#D-CRCAppendix
-uint32_t calc_crc32(unsigned char * buffer, uint32_t length)
+uint32_t calc_crc32(unsigned char *buffer, uint32_t length)
 {
     // Init table
     uint32_t c, crc_table[256];
@@ -338,7 +350,8 @@ uint32_t calc_crc32(unsigned char * buffer, uint32_t length)
     }
     // Compute
     c = 0xffffffffu;
-    for (n = 0; n < length; n++) {
+    for (n = 0; n < length; n++)
+    {
         c = crc_table[(c ^ buffer[n]) & 0xff] ^ (c >> 8);
     }
     printf("crc32 = %u\n", c ^ 0xffffffffu);
@@ -352,8 +365,8 @@ void image_save_to_png(Image *img, const char *file_path)
     spng_ctx *ctx = NULL;
     struct spng_ihdr ihdr = {0};
     ctx = spng_ctx_new(SPNG_CTX_ENCODER);
-    //spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
-    FILE * f = fopen(file_path, "wb");
+    // spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
+    FILE *f = fopen(file_path, "wb");
     spng_set_png_file(ctx, f);
     ihdr.width = img->width;
     ihdr.height = img->height;
@@ -383,7 +396,7 @@ void image_save_to_png(Image *img, const char *file_path)
         return;
     }
     fclose(f);
-    printf("Saved at : %s\n", file_path);
+    printf("[info] Saved at : %s\n", file_path);
 }
 
 void image_save_to_png2(Image *img, const char *file_path)
@@ -425,7 +438,7 @@ void image_save_to_png2(Image *img, const char *file_path)
     memcpy(idhr + 19, &filter_method, 1);
     memcpy(idhr + 20, &interlaced, 1);
     // IHDR - CRC (4) on type & content but not length
-    //uint32_t crc = _byteswap_ulong(0x907753DE);
+    // uint32_t crc = _byteswap_ulong(0x907753DE);
     uint32_t crc = _byteswap_ulong(calc_crc32(idhr + 4, length + 4)); // ignore length, add chunck type length
     memcpy(idhr + 21, &crc, 4);
     printf("IHDR OK\n");
@@ -505,8 +518,7 @@ void image_save_to_png2(Image *img, const char *file_path)
         &comp,
         buffer_in, &buffer_in_length,
         buffer_out2, &buffer_out2_length,
-        TDEFL_FINISH
-    );
+        TDEFL_FINISH);
     printf("Output test 2 (%zu bytes): \n", buffer_out2_length);
     for (size_t i = 0; i < buffer_out2_length; i++)
         printf("%02X\n", buffer_out2[i], i);
@@ -542,7 +554,7 @@ void image_save_to_png2(Image *img, const char *file_path)
     length = buffer_out_length;
     swapped_length = _byteswap_ulong(length);
     uint32_t idat_length = 4 + 4 + length + 4;
-    uint8_t * idat = calloc(idat_length, sizeof(uint8_t));
+    uint8_t *idat = calloc(idat_length, sizeof(uint8_t));
     crc = _byteswap_ulong(calc_crc32(idat + 4, length + 4)); // ignore length idat + 4, add chunck type length + 4 (avant)
 
     // triche
@@ -587,7 +599,7 @@ void image_save_to_png2(Image *img, const char *file_path)
     memcpy(iend + 8, &crc, 4);
     printf("IDEND OK\n");
     // Cleaning
-    //free(data);
+    // free(data);
     // Writing file
     FILE *f = fopen(file_path, "wb");
     if (f == NULL)
@@ -600,7 +612,7 @@ void image_save_to_png2(Image *img, const char *file_path)
     fwrite(idat, 1, idat_length, f);
     fwrite(iend, 1, iend_length, f);
     fclose(f);
-    printf("Saved at : %s\n", file_path);
+    printf("[info] Saved at : %s\n", file_path);
 }
 
 void image_free(Image *img)

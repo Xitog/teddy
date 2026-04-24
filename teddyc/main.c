@@ -305,7 +305,7 @@ bool command_help()
     printf("help                                : display this help\n");
     printf("repl | interactive                  : start a read-eval-print-loop\n");
     printf("info | count | stats | stat <level> : map information with statistics\n"); // count of objects
-    printf("export | extract <level> <type>     : export a <level> to <type> (png, bmp or all)\n");
+    printf("export | extract <level> <type>     : export a <level> to <type> (png, bmp, json or all)\n");
     printf("check <level>                       : check if everything is known for <level>\n");
     printf("list                                : list files of current dir with last modified date\n");
     printf("table [headers, levels]             : display information tables\n");
@@ -343,7 +343,8 @@ bool command_check(CommandParser cp, Data levelDataFile, LevelHeader *level_head
 
             if (!is_empty(val1) && !is_guard(val1) && !is_dog(val1) && !is_ss(val1) &&
                 !is_starting_point(val1) && !is_turning_point(val1) && !is_object(val1) &&
-                !is_pushwall(val1) && !is_dead_guard(val1))
+                !is_pushwall(val1) && !is_endgame_trigger(val1) && !is_boss(val1) &&
+                !is_dead_guard(val1))
             {
                 printf(">>> [Plane 1] Unknown value at line=%u col=%u: %u\n", line, col, val1);
                 unknown += 1;
@@ -389,13 +390,14 @@ bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_hea
 {
     if (command_parser_left(cp) == 0 || !command_parser_is_level(cp))
     {
-        printf("[info] You must indicate a level with format EXMY or eXmY.\n");
+        printf("[error] You must indicate a level with format EXMY or eXmY.\n");
         return false;
     }
     char file_name[255];
     LevelIdentifier identifier = str_to_level_identifier(command_parser_advance(&cp));
     bool png = false;
     bool bmp = true;
+    bool json = false;
     if (command_parser_left(cp) > 0)
     {
         if (command_parser_is_string(cp, "png"))
@@ -405,35 +407,51 @@ bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_hea
         }
         else if (command_parser_is_string(cp, "bmp"))
         {
-            png = false;
             bmp = true;
+        }
+        else if (command_parser_is_string(cp, "json"))
+        {
+            bmp = false;
+            json = true;
         }
         else if (command_parser_is_string(cp, "all"))
         {
             png = true;
             bmp = true;
+            json = true;
         }
         command_parser_advance(&cp);
     }
-    printf("Exporting level e%um%u\n", identifier.episode, identifier.level);
+    printf("[info] Exporting level e%um%u to:\n", identifier.episode, identifier.level);
     Image *level_image = NULL;
     bool NO_GRID = false;
     bool THIN_WALL = true;
     Level lvl = create_level_from_files(levelDataFile, level_headers, identifier.index);
-    level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
-    if (level_image != NULL)
+    if (bmp || png)
     {
-        if (bmp)
+        level_image = level_to_image(lvl, ALL_PLANES, textures, sprites, NO_GRID, THIN_WALL);
+        if (level_image != NULL)
         {
-            sprintf(file_name, "e%um%u.bmp", identifier.episode, identifier.level);
-            image_save_to_bmp(level_image, file_name);
+            if (bmp)
+            {
+                printf("[info] - bmp\n");
+                sprintf(file_name, "e%um%u.bmp", identifier.episode, identifier.level);
+                image_save_to_bmp(level_image, file_name);
+            }
+            if (png)
+            {
+                printf("[info] - png\n");
+                sprintf(file_name, "e%um%u.png", identifier.episode, identifier.level);
+                image_save_to_png(level_image, file_name);
+            }
+            image_free(level_image);
         }
-        if (png)
-        {
-            sprintf(file_name, "e%um%u.png", identifier.episode, identifier.level);
-            image_save_to_png(level_image, file_name);
-        }
-        image_free(level_image);
+    }
+    if (json)
+    {
+        printf("[info] - json\n");
+        sprintf(file_name, "e%um%u.json", identifier.episode, identifier.level);
+        level_to_json_file(lvl, file_name);
     }
     return true;
 }
@@ -512,7 +530,7 @@ int main(int argc, const char *argv[])
     }
     // Read level headers
     LevelHeader *level_headers = malloc(sizeof(LevelHeader) * header.number);
-    //printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
+    // printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
     for (uint8_t i = 0; i < header.number; i++)
     {
         ok = read_level_header(levelDataFile, header.level_header_ptr[i], &level_headers[i]);
@@ -520,7 +538,7 @@ int main(int argc, const char *argv[])
         {
             return EXIT_FAILURE;
         }
-        //display_level_header(&level_headers[i]);
+        // display_level_header(&level_headers[i]);
         ok = read_level_data(levelDataFile, level_headers, i);
         if (!ok)
         {
@@ -680,7 +698,7 @@ int main(int argc, const char *argv[])
             command_parser_advance(&cp);
             good = command_table(cp, header, level_headers);
         }
-        else if (command_parser_is_string(cp, "export"))
+        else if (command_parser_is_string(cp, "export") || command_parser_is_string(cp, "extract"))
         {
             command_parser_advance(&cp);
             good = command_export(cp, levelDataFile, level_headers, textures, sprites);

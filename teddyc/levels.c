@@ -268,6 +268,7 @@ void level_stat(Level lvl, bool order_by_count)
     uint32_t directional_markers = 0;
     uint32_t ammo = 0;
     uint32_t weapons = 0;
+    uint32_t endgame = 0;
 
     uint16_t values0[MAX_SIZE];
     uint16_t values1[MAX_SIZE];
@@ -304,9 +305,17 @@ void level_stat(Level lvl, bool order_by_count)
                 different_values1 += 1;
             }
             values1[val1] += 1;
-            if (val1 == 98)
+            if (is_pushwall(val1))
             {
                 pushwalls += 1;
+            }
+            else if (is_endgame_trigger(val1))
+            {
+                endgame += 1;
+            }
+            else if (is_boss(val1))
+            {
+                bosses += 1;
             }
             else if (val1 >= 23 && val1 <= 62)
             {
@@ -358,6 +367,7 @@ void level_stat(Level lvl, bool order_by_count)
     printf("Doors:                %u\n", doors);               // 20
     printf("Elevators:            %u\n", elevators);           //  2
     printf("Push walls:           %u\n", pushwalls);           //  5
+    printf("Endgame triggers:     %u\n", endgame);             //  0
     printf("--------------------------\n");
     printf("Enemies on easy:      %u\n", baddies1); // 11
     printf("Enemies on medium:    %u\n", baddies3); //  9
@@ -523,6 +533,16 @@ bool is_pushwall(uint16_t val)
     return val == 98;
 }
 
+bool is_endgame_trigger(uint16_t val)
+{
+    return val == 99;
+}
+
+bool is_boss(uint16_t val)
+{
+    return val == 214; // TODO: Other bosses!
+}
+
 bool is_dead_guard(uint16_t val)
 {
     return val == 124;
@@ -645,12 +665,27 @@ Image *level_to_image(Level lvl, uint8_t plane, Image *textures[], Image *sprite
             {
                 // remove the first 64 walls with -64
                 image_draw_image(img, col * 64, line * 64, sprites[raw_sprite + 42 - 64]);
-                // -- Push wall -------------------------------------------------------------
             }
-            else if (raw_sprite == 98)
+            else if (is_pushwall(raw_sprite)) // 98
             {
                 image_draw_rect(img, col * 64, line * 64, 64, 64, GREEN, false);
+            }
+            else if (is_endgame_trigger(raw_sprite)) // 99
+            {
+                image_draw_rect(img, col * 64, line * 64, 64, 64, BLUE, false);
                 // -- Dead Guard ------------------------------------------------------------
+            }
+            else if (is_boss(raw_sprite))
+            {
+                if (raw_sprite == 214)
+                {
+                    image_draw_image(img, col * 64, line * 64, sprites[363 - 64]);
+                }
+                else
+                {
+                    printf("Plane 1 unhandled BOSS value : %u at %u,%u \n", raw_sprite, line, col);
+                    unhandled_plane1 += 1;
+                }
             }
             else if (raw_sprite == 124)
             {
@@ -767,6 +802,57 @@ Image *level_to_image(Level lvl, uint8_t plane, Image *textures[], Image *sprite
             }
         }
     }
-    printf("Number of tiles unhandled: %u\n", unhandled_plane1);
+    if (unhandled_plane1 > 0)
+    {
+        printf("[error] Number of tiles unhandled: %u\n", unhandled_plane1);
+    }
     return img;
+}
+
+void level_to_json_file(Level lvl, const char *file_name)
+{
+    FILE *f = fopen(file_name, "w");
+    fprintf(f, "{\n");
+    fprintf(f, "    \"width\": %u,\n", lvl.width);
+    fprintf(f, "    \"height\": %u,\n", lvl.height);
+    fprintf(f, "    \"planeNumber\": %u,\n", lvl.planeNumber);
+    fprintf(f, "    \"planeData\": [\n");
+    for (uint8_t p = 0; p < lvl.planeNumber; p++)
+    {
+        fprintf(f, "        [\n");
+        for (uint16_t line = 0; line < lvl.height; line++)
+        {
+            fprintf(f, "            [");
+            for (uint16_t col = 0; col < lvl.width; col++)
+            {
+                uint16_t tile = lvl.plane[p][line][col];
+                fprintf(f, "%u", tile);
+                if (col < lvl.width - 1)
+                {
+                    fprintf(f, ", ");
+                }
+            }
+            fprintf(f, "]");
+            if (line == lvl.height - 1)
+            {
+                fprintf(f, "\n");
+            }
+            else
+            {
+                fprintf(f, ",\n");
+            }
+        }
+        fprintf(f, "        ]");
+        if (p == lvl.planeNumber - 1)
+        {
+            fprintf(f, "\n");
+        }
+        else
+        {
+            fprintf(f, ",\n");
+        }
+    }
+    fprintf(f, "    ]\n");
+    fprintf(f, "}\n");
+    fclose(f);
 }
