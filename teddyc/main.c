@@ -204,7 +204,7 @@ bool str_is_valid_level(const char *value)
     }
     else if (strlen(value) == 5)
     {
-        if (strcmp(value, "E1M10") == 0 || strcmp(value, "e1m10"))
+        if (str_is(value, "E1M10") || str_is(value, "e1m10"))
         {
             ok = true;
         }
@@ -230,7 +230,7 @@ LevelIdentifier str_to_level_identifier(const char *value)
     }
     else if (strlen(value) == 5)
     {
-        if (strcmp(value, "E1M10") == 0 || strcmp(value, "e1m10")) // TODO: Handle E>1
+        if (str_is(value, "E1M10") || str_is(value, "e1m10")) // TODO: Handle E>1
         {
             episode = 1;
             level = 10;

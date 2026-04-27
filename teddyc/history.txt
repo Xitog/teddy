@@ -1,5 +1,9 @@
 Wolf3dData Project History and links
 
+27/04/2026
+Rajouté sprite héros sur flèche verte, c’est plus classe mais la flèche se voit moins bien
+e1m10 exporté et vérifié. Toutes les maps du shareware sont exportées.
+
 24/04/2026
 Gestion du boss n°1 et du endgame trigger
 Export de e1m9

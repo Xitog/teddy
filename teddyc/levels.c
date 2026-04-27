@@ -614,18 +614,22 @@ Image *level_to_image(Level lvl, uint8_t plane, Image *textures[], Image *sprite
             if (raw_sprite == 19) // Depart north
             {
                 image_draw_arrow(img, col * 64, line * 64, 64, NORTH, GREEN);
+                image_draw_image(img, col * 64, line * 64, sprites[424 - 64]);
             }
             else if (raw_sprite == 20)
             { // Depart east
                 image_draw_arrow(img, col * 64, line * 64, 64, EAST, GREEN);
+                image_draw_image(img, col * 64, line * 64, sprites[424 - 64]);
             }
             else if (raw_sprite == 21)
             { // Depart south
                 image_draw_arrow(img, col * 64, line * 64, 64, SOUTH, GREEN);
+                image_draw_image(img, col * 64, line * 64, sprites[424 - 64]);
             }
             else if (raw_sprite == 22)
             { // Depart west
                 image_draw_arrow(img, col * 64, line * 64, 64, WEST, GREEN);
+                image_draw_image(img, col * 64, line * 64, sprites[424 - 64]);
                 // -- Turning point ---------------------------------------------------------
             }
             else if (raw_sprite == 90)
