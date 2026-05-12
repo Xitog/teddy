@@ -21,7 +21,7 @@ void get_build_info();
 char * get_current_dir();
 void get_files(const char * dir_path);
 
-void set_console_color(ConsoleColor cc);
-void set_console_color_default();
+void set_console_text_color(ConsoleColor cc);
+void set_console_text_color_default();
 
 #endif

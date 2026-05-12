@@ -2,31 +2,31 @@
 
 void get_build_info()
 {
-    #ifdef _WIN32
+#ifdef _WIN32
     printf("Compiled for Win32\n"); // Win32 1937
-    #endif
-    #ifdef _WIN64
+#endif
+#ifdef _WIN64
     printf("Compiled for Win64\n");
-    #endif
+#endif
     printf("Version of the compiler: %u\n", _MSC_VER);
 }
 
-char * get_current_dir()
+char *get_current_dir()
 {
     DWORD size = GetCurrentDirectory(0, NULL);
-    char * dirname = malloc(sizeof(char) * size);
+    char *dirname = malloc(sizeof(char) * size);
     GetCurrentDirectory(size, dirname);
     return dirname;
 }
 
-void get_files(const char * dir_path)
+void get_files(const char *dir_path)
 {
     // m y d i r \0 strlen = 5 +1 = 6
     // _ _ _ _ _ _  _ _ buffer = 8
     // m y d i r \\ * \0
 
     size_t s = strlen(dir_path) + 1; // for \0
-    char * buffer = malloc(sizeof(char) * s + 2);
+    char *buffer = malloc(sizeof(char) * s + 2);
     strcpy(buffer, dir_path);
     buffer[s - 1] = '\\';
     buffer[s] = '*';
@@ -48,16 +48,18 @@ void get_files(const char * dir_path)
             {
                 printf("DIR : %s\n", file_info.cFileName);
             }
-        } else {
+        }
+        else
+        {
             LARGE_INTEGER file_size;
             file_size.HighPart = file_info.nFileSizeHigh;
             file_size.LowPart = file_info.nFileSizeLow;
             SYSTEMTIME utc;
             FileTimeToSystemTime(&file_info.ftLastWriteTime, &utc);
-            //printf("FILE: %s (%ld bytes) %02d/%02d/%d %02d:%02d\n",
-            //    file_info.cFileName,
-            //    file_size.QuadPart,
-            //    utc.wMonth, utc.wDay, utc.wYear, utc.wHour, utc.wMinute);
+            // printf("FILE: %s (%ld bytes) %02d/%02d/%d %02d:%02d\n",
+            //     file_info.cFileName,
+            //     file_size.QuadPart,
+            //     utc.wMonth, utc.wDay, utc.wYear, utc.wHour, utc.wMinute);
             printf("FILE: %s (%lld bytes) %u/%02u/%02u %02u:%02u\n", file_info.cFileName, file_size.QuadPart, utc.wYear, utc.wMonth, utc.wDay, utc.wHour, utc.wMinute);
         }
         res = FindNextFile(search_handle, &file_info);
@@ -66,7 +68,7 @@ void get_files(const char * dir_path)
     free(buffer);
 }
 
-void set_console_color(ConsoleColor cc)
+void set_console_text_color(ConsoleColor cc)
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dw;
@@ -88,7 +90,7 @@ void set_console_color(ConsoleColor cc)
     }
 }
 
-void set_console_color_default()
+void set_console_text_color_default()
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
