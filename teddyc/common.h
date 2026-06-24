@@ -12,7 +12,7 @@ typedef struct DataStructure {
 } Data;
 
 int32_t get_file_size(FILE *f);
-bool load_file(const char * file_path, Data * mem);
+bool load_file(const wchar_t * file_path, Data * mem);
 uint32_t read_uint32(const Data mem, const uint32_t at);
 int32_t read_int32(const Data mem, const uint32_t at);
 uint16_t read_uint16(const Data mem, const uint32_t at);

@@ -25,6 +25,10 @@ void get_files(const char *dir_path)
     // _ _ _ _ _ _  _ _ buffer = 8
     // m y d i r \\ * \0
 
+    //if (!is_dir(dir_path))
+    //{
+    //    return;
+    //}
     size_t s = strlen(dir_path) + 1; // for \0
     char *buffer = malloc(sizeof(char) * s + 2);
     strcpy(buffer, dir_path);
@@ -68,6 +72,33 @@ void get_files(const char *dir_path)
     free(buffer);
 }
 
+bool is_dir(const wchar_t *dir_path)
+{
+    WIN32_FIND_DATAW file_info;
+    HANDLE search_handle = FindFirstFileW(dir_path, &file_info);
+    bool is_directory = (file_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    FindClose(search_handle);
+    return is_directory;
+}
+
+bool in_dir(const wchar_t *dir_path, const wchar_t *file_name)
+{
+    // Don't forget \0 !
+    bool result = false;
+    wchar_t *buffer = malloc(sizeof(wchar_t) * (wcslen(dir_path) + wcslen(file_name) + 4));
+    wcscpy(buffer, dir_path);
+    buffer[wcslen(dir_path)] = L'\\';
+    buffer[wcslen(dir_path) + 1] = L'\\';
+    wcscpy(buffer + wcslen(dir_path) + 2, file_name);
+    printf("%S\n", buffer);
+    WIN32_FIND_DATAW file_info;
+    HANDLE search_handle = FindFirstFileW(buffer, &file_info);
+    result = (search_handle != INVALID_HANDLE_VALUE);
+    FindClose(search_handle);
+    free(buffer);
+    return result;
+}
+
 void set_console_text_color(ConsoleColor cc)
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -84,9 +115,13 @@ void set_console_text_color(ConsoleColor cc)
     {
         SetConsoleTextAttribute(console, FOREGROUND_BLUE);
     }
-    else if (cc = CONSOLE_WHITE)
+    else if (cc == CONSOLE_WHITE)
     {
         SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+    }
+    else if (cc == CONSOLE_YELLOW)
+    {
+        SetConsoleTextAttribute(console, 14);
     }
 }
 
@@ -94,4 +129,26 @@ void set_console_text_color_default()
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}
+
+void colored_print(const char *msg, ConsoleColor cc)
+{
+    set_console_text_color(cc);
+    printf_s(msg);
+    set_console_text_color_default();
+}
+
+void log_info(const char *msg)
+{
+    colored_print(msg, CONSOLE_YELLOW);
+}
+
+void log_error(const char *msg)
+{
+    colored_print(msg, CONSOLE_RED);
+}
+
+void log_success(const char *msg)
+{
+    colored_print(msg, CONSOLE_GREEN);
 }

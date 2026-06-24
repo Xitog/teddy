@@ -1,0 +1,7 @@
+[26.01.2026]
+1769447704110
+cppcheck-error:2
+cppcheck-warning:6
+cppcheck-style:18
+cppcheck-performance:0
+cppcheck-portability:0

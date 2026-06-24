@@ -1,5 +1,20 @@
 Wolf3dData Project History and links
 
+24/06/2026
+J'ai dû passer à l'Unicode (wchar_t) car l'entrée est en Unicode :
+- wcslen au lieu strlen
+- wcscmp au lieu strcmp
+- wcscpy au lieu strcpy
+- littéraux en L" " et L' ' au lieu de " " et ' '
+- %S dans printf au lieu de %s
+- partout wchar_t au lieu de char
+- wmain au lieu de main
+- FindFirstFileW au lieu de FindFirstFileA
+- WIN32_FIND_DATAW au lieu de WIN32_FIND_DATA
+Ajouter la couleur CONSOLE_YELLOW
+Ajouter une fonction is_dir à partir de FindFirstFileA
+Ajouter les fonctions log_error, log_info et log_success
+
 12/05/2026
 Renommage de set_console_color en set_console_text_color
 

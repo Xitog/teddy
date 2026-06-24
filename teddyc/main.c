@@ -26,11 +26,7 @@
 #include "image.h"
 #include "os.h"
 
-const char *TEDDY_VERSION = "0.1a";
-
-const char *HEADER_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPHEAD.WL1";
-const char *LEVEL_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\MAPTEMP.WL1";
-const char *ASSET_FILE = "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0\\VSWAP.WL1";
+const char *TEDDY_VERSION = "0.1b";
 
 const uint8_t ALL_PLANES = 3;
 
@@ -176,9 +172,9 @@ int32_t str_to_digit(const char *s)
     return res;
 }
 
-bool str_is(const char *value, const char *expected)
+bool str_is(const wchar_t *value, const wchar_t *expected)
 {
-    return strcmp(value, expected) == 0;
+    return wcscmp(value, expected) == 0;
 }
 
 typedef struct LevelIdentifierStruct
@@ -188,23 +184,23 @@ typedef struct LevelIdentifierStruct
     uint8_t index;   // = 0
 } LevelIdentifier;
 
-bool str_is_valid_level(const char *value)
+bool str_is_valid_level(const wchar_t *value)
 {
     bool ok = false;
-    if (strlen(value) == 4)
+    if (wcslen(value) == 4)
     {
         if (
-            (value[0] == 'E' || value[0] == 'e') &&
+            (value[0] == L'E' || value[0] == L'e') &&
             isdigit(value[1]) &&
-            (value[2] == 'M' || value[2] == 'm') &&
+            (value[2] == L'M' || value[2] == L'm') &&
             isdigit(value[3]))
         {
             ok = true;
         }
     }
-    else if (strlen(value) == 5)
+    else if (wcslen(value) == 5)
     {
-        if (str_is(value, "E1M10") || str_is(value, "e1m10"))
+        if (str_is(value, L"E1M10") || str_is(value, L"e1m10"))
         {
             ok = true;
         }
@@ -212,25 +208,25 @@ bool str_is_valid_level(const char *value)
     return ok;
 }
 
-LevelIdentifier str_to_level_identifier(const char *value)
+LevelIdentifier str_to_level_identifier(const wchar_t *value)
 {
     uint8_t episode = 0;
     uint8_t level = 0;
-    if (strlen(value) == 4)
+    if (wcslen(value) == 4)
     {
         if (
-            (value[0] == 'E' || value[0] == 'e') && // TODO: Handle max E
+            (value[0] == L'E' || value[0] == L'e') && // TODO: Handle max E
             isdigit(value[1]) &&
-            (value[2] == 'M' || value[2] == 'm') &&
+            (value[2] == L'M' || value[2] == L'm') &&
             isdigit(value[3]))
         {
-            episode = value[1] - '0';
-            level = value[3] - '0';
+            episode = value[1] - L'0';
+            level = value[3] - L'0';
         }
     }
-    else if (strlen(value) == 5)
+    else if (wcslen(value) == 5)
     {
-        if (str_is(value, "E1M10") || str_is(value, "e1m10")) // TODO: Handle E>1
+        if (str_is(value, L"E1M10") || str_is(value, L"e1m10")) // TODO: Handle E>1
         {
             episode = 1;
             level = 10;
@@ -250,11 +246,11 @@ const bool EXPORT_ALL_SPRITES = false;
 typedef struct CommandParserStructure
 {
     int size;
-    const char **elements;
+    const wchar_t **elements;
     int index;
 } CommandParser;
 
-CommandParser command_parser_create(int at, int argc, const char *argv[])
+CommandParser command_parser_create(int at, int argc, const wchar_t *argv[])
 {
     CommandParser cp = {.index = at, .size = argc, .elements = argv};
     return cp;
@@ -270,14 +266,14 @@ int command_parser_left(CommandParser cp)
     return cp.size - cp.index;
 }
 
-const char *command_parser_get_current(CommandParser cp)
+const wchar_t *command_parser_get_current(CommandParser cp)
 {
     return cp.elements[cp.index];
 }
 
-const char *command_parser_advance(CommandParser *cp)
+const wchar_t *command_parser_advance(CommandParser *cp)
 {
-    const char *old = cp->elements[cp->index];
+    const wchar_t *old = cp->elements[cp->index];
     cp->index += 1;
     return old;
 }
@@ -287,7 +283,7 @@ bool command_parser_is_level(CommandParser cp)
     return str_is_valid_level(command_parser_get_current(cp));
 }
 
-bool command_parser_is_string(CommandParser cp, const char *expected)
+bool command_parser_is_string(CommandParser cp, const wchar_t *expected)
 {
     return str_is(command_parser_get_current(cp), expected);
 }
@@ -298,9 +294,6 @@ bool command_parser_is_string(CommandParser cp, const char *expected)
 
 bool command_help()
 {
-    printf("---------------------------------\n");
-    printf("- Teddy v%s\n", TEDDY_VERSION);
-    printf("---------------------------------\n");
     printf("Help menu:\n");
     printf("help                                : display this help\n");
     printf("repl | interactive                  : start a read-eval-print-loop\n");
@@ -353,15 +346,15 @@ bool command_check(CommandParser cp, Data levelDataFile, LevelHeader *level_head
     }
     if (unknown == 0)
     {
-        set_console_color(CONSOLE_GREEN);
+        set_console_text_color(CONSOLE_GREEN);
         printf("Level e%um%u : all values handled.\n", identifier.episode, identifier.level);
-        set_console_color_default();
+        set_console_text_color_default();
     }
     else
     {
-        set_console_color(CONSOLE_RED);
+        set_console_text_color(CONSOLE_RED);
         printf("Level e%um%u : %u unknown values.\n", identifier.episode, identifier.level, unknown);
-        set_console_color_default();
+        set_console_text_color_default();
     }
     return true;
 }
@@ -376,7 +369,7 @@ bool command_info(CommandParser cp, Data levelDataFile, LevelHeader *level_heade
     }
     LevelIdentifier identifier = str_to_level_identifier(command_parser_advance(&cp));
     bool by_count = false;
-    if (command_parser_left(cp) > 0 && command_parser_is_string(cp, "by_count"))
+    if (command_parser_left(cp) > 0 && command_parser_is_string(cp, L"by_count"))
     {
         by_count = true;
     }
@@ -400,21 +393,21 @@ bool command_export(CommandParser cp, Data levelDataFile, LevelHeader *level_hea
     bool json = false;
     if (command_parser_left(cp) > 0)
     {
-        if (command_parser_is_string(cp, "png"))
+        if (command_parser_is_string(cp, L"png"))
         {
             png = true;
             bmp = false;
         }
-        else if (command_parser_is_string(cp, "bmp"))
+        else if (command_parser_is_string(cp, L"bmp"))
         {
             bmp = true;
         }
-        else if (command_parser_is_string(cp, "json"))
+        else if (command_parser_is_string(cp, L"json"))
         {
             bmp = false;
             json = true;
         }
-        else if (command_parser_is_string(cp, "all"))
+        else if (command_parser_is_string(cp, L"all"))
         {
             png = true;
             bmp = true;
@@ -474,11 +467,11 @@ bool command_table(CommandParser cp, Header header, LevelHeader *level_headers)
         printf("[info] You must choose a table to see between headers.\n");
         return false;
     }
-    if (command_parser_is_string(cp, "headers"))
+    if (command_parser_is_string(cp, L"headers"))
     {
         display_header(&header);
     }
-    else if (command_parser_is_string(cp, "levels"))
+    else if (command_parser_is_string(cp, L"levels"))
     {
         printf("Level name       | W x H | Plane 0 [Size]     | Plane 1 [Size]     | Plane 2 [Size]     |\n");
         for (uint8_t i = 0; i < header.number; i++)
@@ -488,7 +481,7 @@ bool command_table(CommandParser cp, Header header, LevelHeader *level_headers)
     }
     else
     {
-        printf("[info] Invalid table: %s.\n", command_parser_get_current(cp));
+        printf("[info] Invalid table: %S.\n", command_parser_get_current(cp));
         return false;
     }
     return true;
@@ -498,8 +491,81 @@ bool command_table(CommandParser cp, Header header, LevelHeader *level_headers)
 // Main
 //-----------------------------------------------------------------------------
 
-int main(int argc, const char *argv[])
+// "D:\\Perso\\Projets\\git\\teddy\\data\\Wolfenstein 3D\\Shareware\\wolfenstein-3d-1.0"
+
+typedef enum GameVersionEnum
 {
+    UNKNOWN,
+    WOLFENSTEIN_SHAREWARE_v1_0
+} GameVersion;
+
+int wmain(int argc, const wchar_t *argv[])
+{
+    GameVersion game_version = UNKNOWN;
+    const wchar_t * working_directory = NULL;
+
+    printf("------------------------------------------------------------------\n");
+    printf("- Teddy v%s\n", TEDDY_VERSION);
+    printf("------------------------------------------------------------------\n");
+    bool good = false;
+    printf_s("%S\n", argv[0]);
+    if (argc == 1)
+    {
+        log_error("No Wolfenstein 3D directory provided.\n");
+    }
+    else if (argc > 1)
+    {
+        printf_s("%S\n", argv[1]);
+        if (!is_dir(argv[1]))
+        {
+            log_error("The first parameter is not a valid directory.\n");
+        }
+        else
+        {
+            working_directory = argv[1];
+            set_console_text_color(CONSOLE_YELLOW);
+            printf_s("Working directory: %S\n", working_directory);
+            set_console_text_color_default();
+            if (in_dir(working_directory, L"MAPTEMP.WL1"))
+            {
+                log_info("Wolfenstein Shareware (.WL1) 1.0 (MAPTEMP) detected.\n");
+                game_version = WOLFENSTEIN_SHAREWARE_v1_0;
+                good = true;
+            }
+        }
+    }
+
+    if (!good)
+    {
+        log_error("Impossible to find a working version of Wolfenstein.\n");
+        log_info("Goodbye\n");
+        return EXIT_FAILURE;
+    }
+
+    const wchar_t *HEADER_FILE_NAME = L"MAPHEAD.WL1";
+    const wchar_t *LEVEL_FILE_NAME = L"MAPTEMP.WL1";
+    const wchar_t *ASSET_FILE_NAME = L"VSWAP.WL1";
+
+    wchar_t *HEADER_FILE = calloc(300, sizeof(wchar_t));
+    wchar_t *LEVEL_FILE = calloc(300, sizeof(wchar_t));
+    wchar_t *ASSET_FILE = calloc(300, sizeof(wchar_t));
+
+    wcscpy(HEADER_FILE, working_directory);
+    wcscpy(LEVEL_FILE, working_directory);
+    wcscpy(ASSET_FILE, working_directory);
+
+    wcsncat(HEADER_FILE, L"\\\\", 2);
+    wcsncat(LEVEL_FILE, L"\\\\", 2);
+    wcsncat(ASSET_FILE, L"\\\\", 2);
+
+    wcsncat(HEADER_FILE, HEADER_FILE_NAME, wcslen(HEADER_FILE_NAME));
+    wcsncat(LEVEL_FILE, LEVEL_FILE_NAME, wcslen(LEVEL_FILE_NAME));
+    wcsncat(ASSET_FILE, ASSET_FILE_NAME, wcslen(ASSET_FILE_NAME));
+
+    printf("Using: %S\n", HEADER_FILE);
+    printf("Using: %S\n", LEVEL_FILE);
+    printf("Using: %S\n", ASSET_FILE);
+
     // -- Variables ---------------------------------------------------------------------
 
     uint32_t level_index = 0;
@@ -658,7 +724,6 @@ int main(int argc, const char *argv[])
 
     // -- Commands ----------------------------------------------------------------------
 
-    bool good = false;
     if (argc == 1)
     {
         good = command_help();
@@ -666,39 +731,39 @@ int main(int argc, const char *argv[])
     else // argc >= 2
     {
         CommandParser cp = command_parser_create(1, argc, argv);
-        if (command_parser_is_string(cp, "info") ||
-            command_parser_is_string(cp, "count") ||
-            command_parser_is_string(cp, "stats") ||
-            command_parser_is_string(cp, "stat"))
+        if (command_parser_is_string(cp, L"info") ||
+            command_parser_is_string(cp, L"count") ||
+            command_parser_is_string(cp, L"stats") ||
+            command_parser_is_string(cp, L"stat"))
         {
             command_parser_advance(&cp);
             good = command_info(cp, levelDataFile, level_headers);
         }
-        else if (command_parser_is_string(cp, "help"))
+        else if (command_parser_is_string(cp, L"help"))
         {
             command_parser_advance(&cp);
             good = command_help();
         }
-        else if (command_parser_is_string(cp, "check"))
+        else if (command_parser_is_string(cp, L"check"))
         {
             command_parser_advance(&cp);
             good = command_check(cp, levelDataFile, level_headers, textures);
         }
-        else if (command_parser_is_string(cp, "id"))
+        else if (command_parser_is_string(cp, L"id"))
         {
             // identify game and version
         }
-        else if (command_parser_is_string(cp, "list"))
+        else if (command_parser_is_string(cp, L"list"))
         {
             command_parser_advance(&cp);
             good = command_list(cp);
         }
-        else if (command_parser_is_string(cp, "table"))
+        else if (command_parser_is_string(cp, L"table"))
         {
             command_parser_advance(&cp);
             good = command_table(cp, header, level_headers);
         }
-        else if (command_parser_is_string(cp, "export") || command_parser_is_string(cp, "extract"))
+        else if (command_parser_is_string(cp, L"export") || command_parser_is_string(cp, L"extract"))
         {
             command_parser_advance(&cp);
             good = command_export(cp, levelDataFile, level_headers, textures, sprites);
@@ -735,16 +800,16 @@ int main(int argc, const char *argv[])
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!good)
     {
-        set_console_color(CONSOLE_RED);
+        set_console_text_color(CONSOLE_RED);
         printf("Goodbye\n");
-        set_console_color_default();
+        set_console_text_color_default();
         return EXIT_FAILURE;
     }
     else
     {
-        set_console_color(CONSOLE_GREEN);
+        set_console_text_color(CONSOLE_GREEN);
         printf("Goodbye\n");
-        set_console_color_default();
+        set_console_text_color_default();
         return EXIT_SUCCESS;
     }
 

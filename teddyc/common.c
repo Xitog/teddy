@@ -12,16 +12,16 @@ int32_t get_file_size(FILE *f)
     return size;
 }
 
-bool load_file(const char * file_path, Data * mem)
+bool load_file(const wchar_t * file_path, Data * mem)
 {
-    FILE *f = fopen(file_path, "rb");
+    FILE *f = _wfopen(file_path, L"rb");
     if (f == NULL)
     {
-        printf("ERROR: Unable to file: %s.\n", file_path);
+        printf("ERROR: Unable to file: %S.\n", file_path);
         return false;
     }
     mem->size = get_file_size(f);
-    printf("[info] Loading file: %s [%u bytes]\n", file_path, mem->size);
+    printf("[info] Loading file: %S [%u bytes]\n", file_path, mem->size);
     mem->data = malloc(sizeof(uint8_t) * mem->size);
     fread(mem->data, sizeof(uint8_t), mem->size, f);
     fclose(f);
